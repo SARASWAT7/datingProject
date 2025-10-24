@@ -11,7 +11,6 @@ class EnhancedErrorHandler {
     try {
       dev.log('EnhancedErrorHandler handling error: $error');
       
-      // Record error to crashlytics
       CrashHandler.recordError(error, null);
       
       String errorMessage = customMessage ?? _getErrorMessage(error);

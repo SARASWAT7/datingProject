@@ -1,0 +1,15 @@
+{
+  "success": true,
+  "latest_version": "2.1.0",
+  "force_update": false,
+  "force_update_versions": ["1.8.0", "1.7.0"],
+  "update_message": "A new version is available with exciting features!",
+  "update_features": [
+    "Enhanced user interface",
+    "Improved performance and stability", 
+    "New matching algorithm",
+    "Bug fixes and security improvements",
+    "Better chat experience"
+  ],
+  "min_supported_version": "2.0.0"
+}

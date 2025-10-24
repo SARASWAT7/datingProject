@@ -8,7 +8,6 @@ class CrashHandler {
     if (_isInitialized) return;
     
     try {
-      // Set up error handling for Flutter framework errors
       FlutterError.onError = (FlutterErrorDetails details) {
         FlutterError.presentError(details);
         if (kDebugMode) {

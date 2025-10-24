@@ -41,10 +41,55 @@ import 'package:dio/dio.dart';
 import 'package:demoproject/component/apihelper/crash_handler.dart';
 import 'package:demoproject/component/apihelper/startup_optimizer.dart';
 import 'package:demoproject/component/apihelper/firebase_error_handler.dart';
+import 'package:demoproject/service/update_manager.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 const kGoogleApiKey = "AIzaSyCnRAGJaYpc4edJi8DcHaimmJ9mW4k4EVM";
+
+// Test button function for debugging
+void _showTestButton() {
+  final context = navigatorKey.currentState?.context;
+  if (context != null) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('🧪 Update System Test'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Test the update system:'),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                UpdateManager.checkForUpdates(context);
+              },
+              child: Text('Test Update Check'),
+            ),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                UpdateManager.resetUpdateDismissal();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Update dismissal reset!')),
+                );
+              },
+              child: Text('Reset Dismissal'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 setBadgeNum(int count) async {
   try {
@@ -92,16 +137,38 @@ void main() async {
       FirebaseErrorHandler.recordError(e, null);
     }
 
-    // Initialize startup optimizer for ultra-fast performance
-    try {
-      await StartupOptimizer.initializeApp();
-    } catch (e) {
-      if (kDebugMode) {
-        print('Startup optimization error: $e');
-      }
-      // Don't crash the app if startup optimization fails
-      FirebaseErrorHandler.recordError(e, null);
-    }
+            // Initialize startup optimizer for ultra-fast performance
+            try {
+              await StartupOptimizer.initializeApp();
+            } catch (e) {
+              if (kDebugMode) {
+                print('Startup optimization error: $e');
+              }
+              // Don't crash the app if startup optimization fails
+              FirebaseErrorHandler.recordError(e, null);
+            }
+
+            // Check for app updates after a delay
+            Future.delayed(Duration(seconds: 3), () {
+              try {
+                UpdateManager.checkForUpdates(navigatorKey.currentState!.context);
+              } catch (e) {
+                if (kDebugMode) {
+                  print('Update check error: $e');
+                }
+              }
+            });
+
+            // Add test button for debugging (only in debug mode)
+            if (kDebugMode) {
+              Future.delayed(Duration(seconds: 5), () {
+                try {
+                  _showTestButton();
+                } catch (e) {
+                  print('Test button error: $e');
+                }
+              });
+            }
 
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
@@ -221,6 +288,19 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     setState(() {
       _stateHistoryList.add(state);
     });
+    
+    // Check for updates when app resumes
+    if (state == AppLifecycleState.resumed) {
+      Future.delayed(Duration(seconds: 1), () {
+        try {
+          UpdateManager.checkForUpdates(navigatorKey.currentState!.context);
+        } catch (e) {
+          if (kDebugMode) {
+            print('Update check on resume error: $e');
+          }
+        }
+      });
+    }
   }
 
   @override

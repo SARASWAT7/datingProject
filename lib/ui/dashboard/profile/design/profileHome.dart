@@ -1,6 +1,5 @@
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:demoproject/component/alert_box.dart';
 import 'package:demoproject/component/commonfiles/appcolor.dart';
 import 'package:demoproject/component/reuseable_widgets/apptext.dart';
 import 'package:demoproject/component/reuseable_widgets/customNavigator.dart';
@@ -13,13 +12,14 @@ import 'package:sizer/sizer.dart';
 import 'package:velocity_x/velocity_x.dart';
 import '../../../../component/reuseable_widgets/appBar.dart';
 import '../../../../component/reuseable_widgets/apploder.dart';
-import '../../../../component/reuseable_widgets/custom_button.dart';
 import '../../../../component/reuseable_widgets/pinkcontainer.dart';
 import '../../../quesition/remaningQuestions.dart';
 import '../cubit/profile/profilecubit.dart';
 import '../cubit/profile/profilestate.dart';
 import '../moreaboutme/moreAboutMe.dart';
 import 'bio.dart';
+import 'package:demoproject/test_update.dart';
+import 'dart:developer';
 
 class MyProfile extends StatefulWidget {
   const MyProfile({super.key});
@@ -104,32 +104,37 @@ class _MyProfileState extends State<MyProfile> {
                           ),
                           child: Stack(
                             children: [
-                              CachedNetworkImage(
-                                imageUrl: state.profileResponse?.result?.media?[index] ?? "",
-                                height: 70.h,
-                                fit: BoxFit.cover,
-                                width: MediaQuery.of(context).size.width,
-                                imageBuilder: (context, imageProvider) => Container(
+                              GestureDetector(
+                                onLongPress: () {
+                                  _showDeleteDialog(context, index, state.profileResponse?.result?.media?[index] ?? "");
+                                },
+                                child: CachedNetworkImage(
+                                  imageUrl: state.profileResponse?.result?.media?[index] ?? "",
                                   height: 70.h,
+                                  fit: BoxFit.cover,
                                   width: MediaQuery.of(context).size.width,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(30),
-                                    image: DecorationImage(
-                                      image: imageProvider,
-                                      fit: BoxFit.cover,
+                                  imageBuilder: (context, imageProvider) => Container(
+                                    height: 70.h,
+                                    width: MediaQuery.of(context).size.width,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(30),
+                                      image: DecorationImage(
+                                        image: imageProvider,
+                                        fit: BoxFit.cover,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                placeholder: (context, url) =>  Center(
-                                  child: AppLoader(),
-                                ),
-                                errorWidget: (context, url, error) => ClipRRect(
-                                  borderRadius: BorderRadius.circular(30),
-                                  child: Image.asset(
-                                    "assets/images/nn.png",
-                                    height: 70.h,
-                                    fit: BoxFit.cover,
-                                    width: MediaQuery.of(context).size.width,
+                                  placeholder: (context, url) =>  Center(
+                                    child: AppLoader(),
+                                  ),
+                                  errorWidget: (context, url, error) => ClipRRect(
+                                    borderRadius: BorderRadius.circular(30),
+                                    child: Image.asset(
+                                      "assets/images/nn.png",
+                                      height: 70.h,
+                                      fit: BoxFit.cover,
+                                      width: MediaQuery.of(context).size.width,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -312,5 +317,93 @@ class _MyProfileState extends State<MyProfile> {
             borderRadius: isSelected ? null : null),
       ),
     );
+  }
+
+  void _showDeleteDialog(BuildContext context, int index, String imageUrl) {
+    final state = context.read<ProfileCubit>().state;
+    final totalImages = state.profileResponse?.result?.media?.length ?? 0;
+    
+    // Check if user has at least 6 images (minimum requirement)
+    if (totalImages <= 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You must keep at least 6 photos. Cannot delete this image.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Photo'),
+          content: const Text('Are you sure you want to delete this photo? This action cannot be undone.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _deleteSingleImage(context, imageUrl);
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _deleteSingleImage(BuildContext context, String imageUrl) async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
+
+      // Delete the image
+      context.read<ProfileCubit>().deleteSingleMedia(context, imageUrl);
+      
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Photo deleted successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      
+      // Refresh profile data
+      context.read<ProfileCubit>().getprofile(context);
+      
+    } catch (e) {
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete photo: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      
+      log('Error deleting image: $e');
+    }
   }
 }

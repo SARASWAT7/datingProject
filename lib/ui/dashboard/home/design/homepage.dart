@@ -64,7 +64,7 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   children: [
                     if (state.currentIndex >=
-                        state.response!.result!.users!.length - 1)
+                        state.response!.result!.users!.length)
                       Column(
                         children: [
                           if (state.isLoadingMore)
@@ -137,12 +137,23 @@ class _HomePageState extends State<HomePage> {
                             child: child,
                           );
                         },
-                        child: HomeApiData(
-                          key: ValueKey(state.currentIndex),
-                          index: state.currentIndex,
-                          response:
-                              state.response!.result!.users![state.currentIndex],
-                        ),
+                        child: state.currentIndex < state.response!.result!.users!.length
+                            ? HomeApiData(
+                                key: ValueKey(state.currentIndex),
+                                index: state.currentIndex,
+                                response:
+                                    state.response!.result!.users![state.currentIndex],
+                              )
+                            : SizedBox(
+                                height: 60.h,
+                                child: Center(
+                                  child: AppText(
+                                    fontWeight: FontWeight.w500,
+                                    size: 12.sp,
+                                    text: "No users available",
+                                  ),
+                                ),
+                              ),
                       ),
                   ],
                 ),

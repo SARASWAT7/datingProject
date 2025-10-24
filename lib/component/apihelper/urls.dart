@@ -9,7 +9,7 @@ class UrlEndpoints {
 
   ////////////////////////AWS///////////////////////////////
 
-  // static String baseUrl = "https://www.lempiredating.com/api/v1/";
+  static String baseUrl = "https://www.lempiredating.com/api/v1/";
 
   ///////////////////KRISHAN/////////////////////////
 
@@ -17,7 +17,8 @@ class UrlEndpoints {
 
   ///////////////////shubham yadav/////////////////////////
 
-  static String baseUrl = "http://172.16.100.230:10061/api/v1/";
+  // static String baseUrl = "http://172.16.100.230:10061/api/v1/";
+
 
   static String login = "user/login-phone";
   static String verifyOtpWithPhone = "user/verification";

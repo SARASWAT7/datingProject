@@ -2,7 +2,6 @@
 
 import 'dart:developer';
 
-import 'package:demoproject/component/alert_box.dart';
 import 'package:demoproject/component/apihelper/common.dart';
 import 'package:demoproject/component/apihelper/normalmessage.dart';
 import 'package:demoproject/ui/dashboard/profile/cubit/profile/profilestate.dart';
@@ -12,11 +11,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../../component/apihelper/api_service.dart';
 import '../../../../../component/apihelper/toster.dart';
-import '../../../../../component/apihelper/urls.dart';
 
 class ProfileCubit extends Cubit<ProfileState> {
   ProfileCubit() : super(const ProfileState());
@@ -76,6 +72,24 @@ class ProfileCubit extends Cubit<ProfileState> {
           status: ApiState.error, selectedPhoto: [], isDelete: false));
       throw e;
 
+    }
+  }
+
+  void deleteSingleMedia(BuildContext context, String imageUrl) async {
+    UpdateProfileDataRepo repo = UpdateProfileDataRepo();
+
+    emit(state.copyWith(status: ApiState.isLoading));
+
+    try {
+      final response = await repo.delete12([imageUrl]);
+      
+      emit(state.copyWith(status: ApiState.success));
+      log('Single media deleted successfully: $response');
+      
+    } catch (e) {
+      print("Error during single media deletion: $e");
+      emit(state.copyWith(status: ApiState.error));
+      throw e;
     }
   }
 

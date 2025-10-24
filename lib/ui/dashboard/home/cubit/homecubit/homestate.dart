@@ -14,7 +14,7 @@ class HomePageState extends Equatable {
   final bool hasMoreData;
 
   const HomePageState({
-    this.currentIndex = 2, 
+    this.currentIndex = 0, 
     this.response, 
     this.status = ApiStates.normal, 
     this.errorMessage,

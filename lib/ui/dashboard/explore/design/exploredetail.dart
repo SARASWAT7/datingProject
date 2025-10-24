@@ -155,7 +155,7 @@ class _ExploreDetailState extends State<ExploreDetail> {
                 maxlin: 4,
                 color: AppColor.white,
                 fontWeight: FontWeight.w700,
-                size: 24.sp,
+                size: 26.sp,
                 text: widget.explore?.name.toString() ?? '',
               ),
               AppText(
