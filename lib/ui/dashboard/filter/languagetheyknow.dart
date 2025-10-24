@@ -1,0 +1,154 @@
+import 'dart:developer';
+
+import 'package:demoproject/ui/dashboard/filter/cubit/filtercubit.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:group_button/group_button.dart';
+import 'package:sizer/sizer.dart';
+
+import '../../../component/commonfiles/appcolor.dart';
+import '../../../component/reuseable_widgets/appBar.dart';
+import '../../../component/reuseable_widgets/apptext.dart';
+import '../../../component/reuseable_widgets/custom_button.dart';
+import '../../../component/reuseable_widgets/text_field.dart';
+import 'education.dart';
+
+class Languagetheyknow extends StatefulWidget {
+  const Languagetheyknow({Key? key}) : super(key: key);
+
+  @override
+  State<Languagetheyknow> createState() => _LanguagetheyknowState();
+}
+
+class _LanguagetheyknowState extends State<Languagetheyknow> {
+  List<String> name = [
+    "Amharic", "Arabic", "Basque", "Bengali", "Portugues", "Bulgarian",
+    "Catalan", "Cherokee", "Croatian", "Czech", "Danish", "Dutch","English (UK)","English (US)",
+    "Estonian", "Filipino", "Finnish", "French", "German", "Greek",
+    "Gujarati", "Hebrew", "Hindi", "Hungarian", "Icelandic", "Indonesian",
+    "Italian", "Japanese", "Kannada", "Korean", "Latvian", "Lithuanian",
+    "Malay", "Malayalam", "Marathi", "Norwegian", "Polish",
+    "Portuguese", "Romanian", "Russian", "Serbian", "Chinese",
+    "Slovak", "Slovenian", "Spanish", "Swahili", "Swedish", "Tamil",
+    "Telugu", "Thai", "Chinese", "Turkish", "Urdu", "Ukrainian",
+    "Vietnamese", "Welsh"
+  ];
+  List<String> selectedLanguages = [];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: appBarWidgetThree(
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 5.0),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.of(context).pop();
+            },
+            child: Transform.scale(
+              scale: 0.5,
+              child: Image.asset(
+                'assets/images/backarrow.png',
+                height: 50,
+                width: 50,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ),
+        title: 'Language They Know',
+        titleColor: Colors.black,
+        backgroundColor: Colors.white,
+        centerTitle: true,
+        showBorder: false,
+      ),
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          Spacer(),
+          Container(
+            height: MediaQuery.of(context).size.height * 0.86,
+            width: MediaQuery.of(context).size.width,
+            decoration: BoxDecoration(
+              color: Color(0xffFFC8D3),
+              borderRadius: BorderRadius.only(topLeft:Radius.circular(45),topRight:Radius.circular(45)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: AppText(
+                      size: 18,
+                      maxlin: 2,
+                      text:
+                          'Select the languages you want your loved one to know.',
+                      color: Colors.black,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  SpaceWidget(
+                      height: MediaQuery.of(context).size.height * 0.03),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: GroupButton(
+                      isRadio: false,
+                      maxSelected: 5,
+                      onSelected: (value, index, isSelected) {
+                        setState(() {
+                          if (isSelected) {
+                            selectedLanguages.add(value.toString());
+                          } else {
+                            selectedLanguages.remove(value.toString());
+                          }
+                        });
+                      },
+                      buttons: name,
+                      options: GroupButtonOptions(
+                        selectedShadow: const [],
+                        selectedTextStyle: TextStyle(
+                          fontSize: 18.sp,
+                          color: bgClr,
+                        ),
+                        selectedColor: const Color(0xffFFFFFF),
+                        unselectedShadow: const [],
+                        unselectedTextStyle: TextStyle(
+                          fontSize: 18.sp,
+                          color: Colors.black,
+                        ),
+                        selectedBorderColor: bgClr,
+                        unselectedBorderColor: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(30),
+                        spacing: 10,
+                        runSpacing: 10,
+                        groupingType: GroupingType.wrap,
+                        direction: Axis.horizontal,
+                        mainGroupAlignment: MainGroupAlignment.start,
+                        crossGroupAlignment: CrossGroupAlignment.start,
+                        groupRunAlignment: GroupRunAlignment.start,
+                        textAlign: TextAlign.center,
+                        textPadding: EdgeInsets.zero,
+                        alignment: Alignment.center,
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                  SpaceWidget(height: MediaQuery.of(context).size.height * 0.1),
+                  GestureDetector(
+                    onTap: () {
+                      context
+                          .read<FilterCubit>()
+                          .languageUpdate(selectedLanguages);
+                      Navigator.pop(context);
+                    },
+                    child: CustomButton(text: 'Apply Filter'),
+                  )
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

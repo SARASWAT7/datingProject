@@ -1,0 +1,142 @@
+// ignore_for_file: non_constant_identifier_names, prefer_typing_uninitialized_variables, prefer_final_fields, sort_child_properties_last, unused_local_variable, unnecessary_null_comparison, deprecated_member_use, unused_field, body_might_complete_normally_nullable, unused_element
+
+import 'package:demoproject/component/commonfiles/appcolor.dart';
+import 'package:demoproject/ui/dashboard/chat/videocall/audioCall.dart';
+import 'package:demoproject/ui/dashboard/chat/videocall/videocall.dart';
+import 'package:demoproject/ui/dashboard/chat/videocall/videocallcubit/videostate.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:sizer/sizer.dart';
+import 'package:slide_to_act/slide_to_act.dart';
+import 'package:velocity_x/velocity_x.dart';
+import '../../../../component/reuseable_widgets/apploder.dart';
+import 'callcubit/callCubit.dart';
+import 'callcubit/callstate.dart';
+import 'chatbackground.dart';
+import 'native_device_orientation.dart';
+
+class AudioCallAccept extends StatefulWidget {
+  final String userId;
+  final String profileImage;
+  final String userName;
+  final String name, channelName, token;
+  const AudioCallAccept(
+      {super.key,
+      required this.userId,
+        required this.userName,
+      required this.profileImage,
+      required this.name,
+      required this.channelName,
+      required this.token});
+
+  @override
+  State<AudioCallAccept> createState() => _AudioCallAcceptState();
+}
+
+class _AudioCallAcceptState extends State<AudioCallAccept> {
+  @override
+  void initState() {
+    context.read<AcceptRejectCubit>().getUserData(widget.userId);
+    super.initState();
+  }
+
+  @override
+  void deactivate() {
+    super.deactivate();
+  }
+
+  _willPopupScope() {
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () => _willPopupScope(),
+      child: BlocBuilder<AcceptRejectCubit, AcceptRejectState>(
+        builder: (context, state) {
+          return state.callStatus == CallState.loading
+              ? AppLoader()
+              : Scaffold(
+                  //backgroundColor: Colors.transparent,
+
+                  body: NativeDeviceOrientationReader(builder: (context) {
+                  return Stack(
+                    children: [
+                      ChatRoomUserImage(
+                        name: state.senderImage,
+                        // image:state.sendername,
+                      ),
+                      ChatRoomUserInfo(
+                        name: state.sendername,
+                        image: state.senderImage,
+                        callStatus: false,
+                        time: "",
+                      ),
+                      Positioned(
+                        bottom: 5.h, // Adjust the position as needed
+                        left: 0,
+                        right: 0,
+                        child: SlideAction(
+                          height: 9.h,
+                          onSubmit: () {
+                            Navigator.of(context).pop();
+                            if (widget.name == "video") {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) => VideoCall(
+                                            isReciver: true,
+                                            channelName: widget.channelName,
+                                            token: widget.token,
+                                            userId: widget.userId,
+                                            myUserId: '',
+                                          )));
+                              /*
+                               Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => VideoCall(
+                                userId:
+                                widget.otherUserId,
+                                myUserId: widget.userId,
+                              )));
+                              */
+                            } else {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) => AudioCallCall(
+                                            isReciver: true,
+                                            channelName: widget.channelName,
+                                            token: widget.token,
+                                            userId: widget.userId,
+                                            myUserId: '',
+                                            profileImage: state.senderImage,
+                                            name: state.sendername,
+                                        userName: widget.userName
+                                          )));
+                            }
+                          },
+                          outerColor: AppColor().bgColor.withOpacity(0.4),
+                          sliderButtonIcon: Icon(
+                            Icons.phone_outlined,
+                            size: 6.w,
+                            color: Colors.green,
+                          ),
+                          text: 'swipe to pick call',
+                          textStyle: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13.sp,
+                              fontFamily: 'NunitoSans',
+                              fontWeight: FontWeight.w500),
+                        ).pOnly(left: 5.w, right: 5.w),
+                      ),
+                    ],
+                  );
+                }));
+        },
+      ),
+    );
+  }
+}

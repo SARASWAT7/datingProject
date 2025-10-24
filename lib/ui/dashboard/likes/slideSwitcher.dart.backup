@@ -1,0 +1,103 @@
+import 'package:demoproject/ui/dashboard/likes/youlikes.dart';
+import 'package:flutter/material.dart';
+import 'package:sizer/sizer.dart';
+
+import '../../../component/commonfiles/appcolor.dart';
+import 'likesyou.dart';
+
+class LikePage extends StatefulWidget {
+  @override
+  _LikePageState createState() => _LikePageState();
+}
+
+class _LikePageState extends State<LikePage> {
+  int _selectedIndex = 1;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          SizedBox(height: MediaQuery.of(context).size.height * 0.1),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 5.w),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColor.tinderclr.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(40.0),
+              ),
+              child: Stack(
+                children: [
+                  AnimatedAlign(
+                    duration: Duration(milliseconds: 300),
+                    alignment: _selectedIndex == 0
+                        ? Alignment.centerLeft
+                        : Alignment.centerRight,
+                    child: Container(
+                      width: MediaQuery.of(context).size.width * 0.4,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: AppColor.tinderclr,
+                        borderRadius: BorderRadius.circular(40.0),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildTab(
+                        title: 'Likes you',
+                        isSelected: _selectedIndex == 0,
+                        onTap: () => _onTabTapped(0),
+                      ),
+                      _buildTab(
+                        title: 'You Like',
+                        isSelected: _selectedIndex == 1,
+                        onTap: () => _onTabTapped(1),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+          Expanded(
+            child: _selectedIndex == 0 ? Likesyou() : YouLike(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTab({required String title, required bool isSelected, required VoidCallback onTap}) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 50,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(40.0),
+          ),
+          child: Text(
+            title,
+            style: TextStyle(
+              color: isSelected ? Colors.white : AppColor.tinderclr,
+              fontWeight: FontWeight.bold,
+              fontSize: 16.sp,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _onTabTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+}

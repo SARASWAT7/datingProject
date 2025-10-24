@@ -1,0 +1,138 @@
+import 'package:demoproject/ui/dashboard/filter/cubit/filtercubit.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:group_button/group_button.dart';
+import 'package:sizer/sizer.dart';
+import 'package:velocity_x/velocity_x.dart';
+
+import '../../../component/commonfiles/appcolor.dart';
+import '../../../component/reuseable_widgets/appBar.dart';
+import '../../../component/reuseable_widgets/apptext.dart';
+import '../../../component/reuseable_widgets/custom_button.dart';
+
+class FilterBio extends StatefulWidget {
+  final String initialBio;
+
+  const FilterBio({Key? key, required this.initialBio}) : super(key: key);
+
+  @override
+  State<FilterBio> createState() => _FilterBioState();
+}
+
+class _FilterBioState extends State<FilterBio> {
+  final List<String> bioOptions = ["Yes", "No"];
+  final GroupButtonController controller = GroupButtonController();
+  late String selectedBio;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedBio = widget.initialBio;
+    controller.selectIndex(bioOptions.indexOf(selectedBio));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: appBarWidgetThree(
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 5.0),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.of(context).pop();
+            },
+            child: Transform.scale(
+              scale: 0.5,
+              child: Image.asset(
+                'assets/images/backarrow.png',
+                height: 50,
+                width: 50,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ),
+        title: 'Bio',
+        titleColor: Colors.black,
+        backgroundColor: Colors.white,
+        centerTitle: true,
+        showBorder: false,
+      ),
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          Spacer(),
+          Container(
+            height: MediaQuery.of(context).size.height * 0.86,
+            width: MediaQuery.of(context).size.width,
+            decoration: BoxDecoration(
+              color: Color(0xffFFC8D3),
+              borderRadius: BorderRadius.only(topLeft:Radius.circular(45),topRight:Radius.circular(45)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+              child: Column(
+                children: [
+                  AppText(
+                    size: 18,
+                    maxlin: 2,
+                    text: 'Do you want to filter your match as per the Bio?',
+                    color: Colors.black,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  SizedBox(height: 20),
+                  Center(
+                    child: GroupButton(
+                      controller: controller,
+                      maxSelected: 1,
+                      isRadio: true,
+                      buttons: bioOptions,
+                      onSelected: (value, index, isSelected) {
+                        setState(() {
+                          selectedBio = value.toString();
+                        });
+                      },
+                      options: GroupButtonOptions(
+
+                        selectedTextStyle: TextStyle(
+                          fontSize: 18.sp,
+                          color: bgClr,
+                        ),
+                        selectedColor: Colors.white,
+                        unselectedColor: Colors.transparent,
+                        selectedBorderColor: bgClr,
+                        unselectedBorderColor: Colors.transparent,
+                        borderRadius: BorderRadius.circular(30),
+                        spacing: 1.h,
+                        runSpacing: 1.h,
+                        groupingType: GroupingType.column,
+                        direction: Axis.horizontal,
+                        buttonHeight: 6.h,
+                        buttonWidth: 45.w,
+                        mainGroupAlignment: MainGroupAlignment.start,
+                        crossGroupAlignment: CrossGroupAlignment.start,
+                        groupRunAlignment: GroupRunAlignment.start,
+                        textAlign: TextAlign.center,
+                        textPadding: EdgeInsets.zero,
+                        alignment: Alignment.center,
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 6.h),
+                  GestureDetector(
+                    onTap: () {
+                      context.read<FilterCubit>().hasBioUpdate(selectedBio);
+                      Navigator.pop(context);
+                    },
+                    child: CustomButton(text: 'Apply Filter'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

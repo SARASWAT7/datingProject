@@ -1,0 +1,154 @@
+import 'dart:developer';
+import 'package:demoproject/component/utils/custom_text.dart';
+import 'package:flutter/material.dart';
+import 'package:group_button/group_button.dart';
+import 'package:sizer/sizer.dart';
+import '../../component/alert_box.dart';
+import '../../component/commonfiles/appcolor.dart';
+import '../../component/reuseable_widgets/custom_button.dart';
+import '../../component/utils/headerwidget.dart';
+import 'basicinformation.dart';
+
+class MySexualOrientation extends StatefulWidget {
+  final String gender;
+  final List iamInterstedList;
+  const MySexualOrientation({Key? key,this.gender="", required this.iamInterstedList}) : super(key: key);
+
+  @override
+  State<MySexualOrientation> createState() => _MySexualOrientationState();
+}
+
+class _MySexualOrientationState extends State<MySexualOrientation> {
+  final List<String> items = List<String>.generate(10, (i) => "Item $i");
+
+  GroupButtonController controller = GroupButtonController();
+  List sexsualiamIntersed = [];
+
+  @override
+  Widget build(BuildContext context) {
+  
+    return Scaffold(
+      backgroundColor: AppColor.white,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+             children: [
+               HeaderWidget(
+                title: 'My Sexual Orientation',
+                progress: 0.28,
+                onTap: () {},
+              ),
+              const SizedBox(
+                height: 15,
+              ),
+              Padding(
+                padding: const EdgeInsets.only(left: 25),
+                child: Align(
+                  alignment: Alignment.topLeft,
+
+                  child: CustomText(
+                      size: 18,
+                      text: 'You can select Multiple choices.',
+                      color: AppColor.grey,
+                      weight: FontWeight.w600,
+                      fontFamily: 'Nunito Sans'),
+                ),
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              GroupButton(
+
+                isRadio: false,
+                controller: controller,
+                onSelected: (value, index, isSelected) {
+                  log(value.toString());
+                  if (isSelected == true) {
+                    sexsualiamIntersed.add(value);
+                  } else {
+                    sexsualiamIntersed.remove(value);
+                  }
+                  if (value == "Prefer Not To Say") {}
+                },
+                buttons: const [
+                  "Straight",
+                  "Gay",
+                  "Lesbian",
+                  "Bisexual",
+                  "Asexual",
+                  "Demi Sexual",
+                  "Pansexual",
+                  "Queer",
+                  "Bicurious",
+                  "Aromantic"
+                ],
+                options: GroupButtonOptions(
+                  unselectedShadow: [],
+
+                  selectedTextStyle: TextStyle(
+                    fontSize: 14.sp,
+                    color: bgClr,
+                  ),
+                  selectedColor: Colors.transparent,
+                  selectedBorderColor: bgClr,
+                  unselectedColor: Colors.transparent,
+                  unselectedBorderColor: null,
+                  borderRadius: BorderRadius.circular(30),
+                  spacing: 1.h,
+                  runSpacing: 1.h,
+                  groupingType: GroupingType.column,
+                  direction: Axis.horizontal,
+                  buttonHeight: 6.h,
+                  buttonWidth: 45.w,
+                  mainGroupAlignment: MainGroupAlignment.start,
+                  crossGroupAlignment: CrossGroupAlignment.start,
+                  groupRunAlignment: GroupRunAlignment.start,
+                  textAlign: TextAlign.center,
+                  textPadding: EdgeInsets.zero,
+                  alignment: Alignment.center,
+                  elevation: 0,
+                ),
+              ),
+              SizedBox(
+                height: 20,
+              ),
+               GestureDetector(
+                 onTap: () {
+                   if (sexsualiamIntersed.isEmpty) {
+                     showDialog<void>(
+                       context: context,
+                       builder: (_) =>
+                       const AlertBox(
+                         title: "Please Select Sexual Orientation",
+                       ),
+                     );
+                   } else {
+                     Navigator.push(
+                         context, MaterialPageRoute(
+                         builder: (context) => BasicInfoPage(gendername:widget.gender,iamInterstedname:widget.iamInterstedList,sexualorientationList:sexsualiamIntersed)
+
+                     )
+                     );
+                   }
+                 },
+                 child:
+                 Padding(
+                   padding:   EdgeInsets.only(left: 4.w,right: 4.w),
+                   child: CustomButton(text: 'Continue'),
+                 ),
+
+
+               ),
+               SizedBox(height: 18,)
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+
+
+

@@ -1,0 +1,786 @@
+// ignore_for_file: must_be_immutable, prefer_typing_uninitialized_variables, unnecessary_null_comparison
+
+import 'dart:developer';
+import 'package:demoproject/component/apihelper/common.dart';
+import 'package:demoproject/component/reuseable_widgets/apploder.dart';
+import 'package:demoproject/component/utils/custom_text.dart';
+import 'package:demoproject/component/utils/headerwidget.dart';
+import 'package:demoproject/ui/auth/cubit/basicinformation/bacisinformationcubit.dart';
+import 'package:demoproject/ui/auth/cubit/basicinformation/bacisinformationstate.dart';
+import 'package:dio/dio.dart';
+import 'package:dropdown_search/dropdown_search.dart';
+
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:google_places_flutter/google_places_flutter.dart';
+import 'package:google_places_flutter/model/prediction.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sizer/sizer.dart';
+import 'package:velocity_x/velocity_x.dart';
+
+import '../../component/alert_box.dart';
+import '../../component/commonfiles/appcolor.dart';
+import '../../component/reuseable_widgets/custom_button.dart';
+import '../../main.dart';
+
+// import 'package:google_maps_webservice/places.dart';
+
+import 'iam.dart';
+import 'moreaboutme.dart';
+
+const String kGoogleApiKey = "AIzaSyBF4lh33f-kYpzZY4P0UWTXgSKyzqpnBZg";
+
+class BasicInfoPage extends StatefulWidget {
+  final String gendername;
+  final List iamInterstedname;
+  final List sexualorientationList;
+  BasicInfoPage({
+    super.key,
+    this.gendername = "",
+    required this.iamInterstedname,
+    required this.sexualorientationList,
+  });
+
+  onlyCountryName(String name) {
+    List countyry = name.split("    ");
+    return countyry[1];
+  }
+
+  bool loadingcountry = false;
+  @override
+  State<BasicInfoPage> createState() => _BasicInfoPageState();
+}
+
+class _BasicInfoPageState extends State<BasicInfoPage> {
+  String dob = "";
+  double height = 100;
+  String selectedCountry = "";
+  String selectedState = "";
+  String city = "";
+  String address = "";
+  bool dist = false;
+  var _dropDownValue3;
+  var _dropDownValue4;
+  TextEditingController relationShipStatus = TextEditingController();
+  TextEditingController degree = TextEditingController();
+  TextEditingController profession = TextEditingController();
+  TextEditingController _controller = TextEditingController();
+  setDob() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    dob = prefs.getString('dob').toString();
+    log("set");
+  }
+
+  @override
+  void initState() {
+    setDob();
+    super.initState();
+  }
+
+  onsuccess() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setBool("iAmDone", true);
+    log("set");
+    // ignore: use_build_context_synchronously
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const IamScreen()),
+    );
+  }
+
+  onlyCountryName(String name) {
+    List countyry = name.split("    ");
+    return countyry[1];
+  }
+
+  bool loadingcountry = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => BasicInformationCubit(),
+      child: BlocBuilder<BasicInformationCubit, BasicInformationState>(
+        builder: (context, state) {
+          return Stack(
+            children: [
+              Scaffold(
+                backgroundColor: AppColor.white,
+                body: SafeArea(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        HeaderWidget(
+                          title: 'Basic Information',
+                          progress: 0.42,
+                          onTap: () {},
+                        ),
+                        SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                left: 17,
+                                right: 17,
+                              ),
+                              child: CustomText(
+                                text: 'Height',
+                                size: 15.sp,
+                                weight: FontWeight.w700,
+                                color: Colors.black,
+                                fontFamily: 'Nunito Sans',
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                left: 17,
+                                right: 17,
+                              ),
+                              child: CustomText(
+                                text: dist
+                                    ? "${(height / 30.48).toStringAsFixed(1)} Ft"
+                                    : '${height.toInt()} Cm',
+                                size: 13.sp,
+                                color: bgClr,
+                                weight: FontWeight.w700,
+                                fontFamily: 'Nunito Sans',
+                              ),
+                            ),
+                          ],
+                        ),
+                        1.h.heightBox,
+                        Padding(
+                          padding: const EdgeInsets.only(left: 17, right: 17),
+                          child: Container(
+                            height: 8.h,
+                            decoration: BoxDecoration(
+                              color: const Color(
+                                0xffFFFFFF,
+                              ), // Solid white color
+                              border: Border.all(
+                                color: const Color(0xffBCBCBC),
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Slider(
+                              activeColor: bgClr,
+                              inactiveColor: const Color(0xffD3D3D3),
+                              value: height,
+                              max: 300,
+                              min: 100,
+                              // divisions: 0,
+                              label: height.truncateToDouble().toString(),
+                              onChanged: (double value) {
+                                setState(() {
+                                  height = value;
+                                });
+                              },
+                            ),
+                          ),
+                        ),
+                        3.h.heightBox,
+
+                        Padding(
+                          padding: const EdgeInsets.only(left: 17, right: 17),
+                          child: CustomText(
+                            weight: FontWeight.w700,
+                            color: Colors.black,
+                            size: 15.sp,
+                            text: 'Where You Grow Up?',
+                            fontFamily: 'Nuniti Sans',
+                          ).objectTopLeft(),
+                        ),
+                        1.h.heightBox,
+                        // Padding(
+                        //   padding: const EdgeInsets.only(left: 17, right: 17),
+                        //   child:
+                        //       Container(
+                        //         height: 7.h,
+                        //         width: 90.w,
+                        //         decoration: BoxDecoration(
+                        //           color: const Color(0xffFFFFFF),
+                        //           border: Border.all(
+                        //             color: const Color(0xffBCBCBC),
+                        //           ),
+                        //           borderRadius: BorderRadius.circular(20),
+                        //         ),
+                        //         child:
+                        //             selectedCountry.isEmpty &&
+                        //                 selectedState.isEmpty
+                        //             ? Row(
+                        //                 children: [
+                        //                   Padding(
+                        //                     padding: const EdgeInsets.all(8.0),
+                        //                     child: CustomText(
+                        //                       weight: FontWeight.w600,
+                        //                       size: 14.sp,
+                        //                       color: Colors.black,
+                        //                       text: "Select country and state",
+                        //                       fontFamily: 'NUnitSans',
+                        //                     ),
+                        //                   ),
+                        //                   const Spacer(),
+                        //                   const Icon(
+                        //                     Icons.arrow_drop_down_rounded,
+                        //                     color: Colors.black,
+                        //                     size: 30,
+                        //                   ),
+                        //                 ],
+                        //               )
+                        //             : Row(
+                        //                 children: [
+                        //                   2.w.widthBox,
+                        //                   Padding(
+                        //                     padding: const EdgeInsets.symmetric(
+                        //                       horizontal: 17,
+                        //                     ),
+                        //                     child: CustomText(
+                        //                       weight: FontWeight.w600,
+                        //                       color: Colors.black,
+                        //                       text:
+                        //                           "$selectedCountry, $selectedState",
+                        //                       fontFamily: 'NunitoSans',
+                        //                       size: 15.sp,
+                        //                     ),
+                        //                   ),
+                        //                   const Spacer(),
+                        //                   const Icon(
+                        //                     Icons.arrow_drop_down_rounded,
+                        //                     color: Colors.black,
+                        //                     size: 30,
+                        //                   ),
+                        //                   2.w.widthBox,
+                        //                 ],
+                        //               ),
+                        //       ).onTap(() async {
+                        //         log("top");
+                        //         // Prediction? p = await PlacesAutocomplete.show(
+                        //         //   types: [],
+                        //         //   region: "all",
+                        //         //   strictbounds: false,
+                        //         //   components: [],
+                        //         //   context: context,
+                        //         //   apiKey: kGoogleApiKey,
+                        //         //   logo: Container(),
+                        //         //   language: 'en',
+                        //         //   mode: Mode.overlay,
+                        //         // );
+                        //         // displayPrediction(p);
+                        //       }),
+                        // ),
+                        Padding(
+                          padding: EdgeInsets.only(left: 5.w, right: 5.w),
+                          child: GooglePlaceAutoCompleteTextField(
+                            boxDecoration: BoxDecoration(
+                              border: Border.all(
+                                color: const Color(0xffBCBCBC),
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [whitecolor, whitecolor, whitecolor],
+                              ),
+                            ),
+                            inputDecoration: InputDecoration(
+                              hintText: 'Write place',
+                              hintStyle: TextStyle(
+                                fontFamily: 'Nunito',
+                                fontWeight: FontWeight.w400,
+                                fontSize: 15.sp,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.only(left: 3.w),
+                            ),
+                            textStyle: TextStyle(
+                              fontSize: 15.sp,
+                              fontFamily: 'Nunito',
+                            ),
+                            textEditingController: _controller,
+                            googleAPIKey: kGoogleApiKey,
+                            debounceTime: 800,
+                            countries: const ["us", "in"],
+                            isLatLngRequired: true,
+                            getPlaceDetailWithLatLng: (placeId) async {
+                              try {
+                                displayPrediction(placeId);
+                                // You may implement additional logic here if needed
+                              } catch (error) {}
+                            },
+                            itemClick: (prediction) {
+                              _controller.text = prediction.description!;
+                              _controller
+                                  .selection = TextSelection.fromPosition(
+                                TextPosition(offset: _controller.text.length),
+                              );
+                              // Extract country (assuming it's included in prediction's description)
+
+                              setState(
+                                () {},
+                              ); // To refresh the UI with selected country
+                            },
+                          ),
+                        ),
+
+                        /// ----------- STATE / CITY SELECTION -------------
+                        // Padding(
+                        //   padding: const EdgeInsets.only(left: 17, right: 17),
+                        //   child: CustomText(
+                        //     text: 'City',
+                        //     size: 15.sp,
+                        //     color: Colors.black,
+                        //     weight: FontWeight.w700,
+                        //     fontFamily: 'Nunito Sans',
+                        //   ).objectTopLeft(),
+                        // ),
+                        // 1.h.heightBox,
+                        // AbsorbPointer(
+                        //   child: Padding(
+                        //     padding: const EdgeInsets.only(left: 17, right: 17),
+                        //     child: Container(
+                        //       height: 7.h,
+                        //       width: 90.w,
+                        //       decoration: BoxDecoration(
+                        //         color: const Color(0xffFFFFFF),
+                        //         border: Border.all(
+                        //           color: const Color(0xffBCBCBC),
+                        //         ),
+                        //         borderRadius: BorderRadius.circular(20),
+                        //       ),
+                        //       child: city.isEmpty
+                        //           ? Row(
+                        //               children: [
+                        //                 Padding(
+                        //                   padding: const EdgeInsets.all(8.0),
+                        //                   child: CustomText(
+                        //                     weight: FontWeight.w600,
+                        //                     size: 14.sp,
+                        //                     color: Colors.black,
+                        //                     text: "Select city",
+                        //                     fontFamily: 'NUnitSans',
+                        //                   ),
+                        //                 ),
+                        //               ],
+                        //             )
+                        //           : Row(
+                        //               children: [
+                        //                 2.w.widthBox,
+                        //                 Padding(
+                        //                   padding: const EdgeInsets.symmetric(
+                        //                     horizontal: 17,
+                        //                   ),
+                        //                   child: CustomText(
+                        //                     weight: FontWeight.w600,
+                        //                     color: Colors.black,
+                        //                     text: city,
+                        //                     fontFamily: 'NunitoSans',
+                        //                     size: 12.sp,
+                        //                   ),
+                        //                 ),
+                        //                 const Spacer(),
+                        //                 2.w.widthBox,
+                        //               ],
+                        //             ),
+                        //     ),
+                        //   ),
+                        // ),
+
+                        // 2.h.heightBox,
+                        // Padding(
+                        //   padding: const EdgeInsets.only(left: 17, right: 17),
+                        //   child: CustomText(
+                        //     text: 'State',
+                        //     size: 15.sp,
+                        //     color: Colors.black,
+                        //     weight: FontWeight.w700,
+                        //     fontFamily: 'Nunito Sans',
+                        //   ).objectTopLeft(),
+                        // ),
+                        // 1.h.heightBox,
+                        // AbsorbPointer(
+                        //   child: Padding(
+                        //     padding: const EdgeInsets.only(left: 17, right: 17),
+                        //     child: Container(
+                        //       height: 7.h,
+                        //       width: 90.w,
+                        //       decoration: BoxDecoration(
+                        //         color: const Color(
+                        //           0xffFFFFFF,
+                        //         ), // Solid white color
+                        //         border: Border.all(
+                        //           color: const Color(0xffBCBCBC),
+                        //         ),
+                        //         borderRadius: BorderRadius.circular(20),
+                        //       ),
+                        //       child: selectedState.isEmpty
+                        //           ? Row(
+                        //               children: [
+                        //                 Padding(
+                        //                   padding: const EdgeInsets.all(8.0),
+                        //                   child: CustomText(
+                        //                     weight: FontWeight.w600,
+                        //                     size: 14.sp,
+                        //                     color: Colors.black,
+                        //                     text: "Select country and state",
+                        //                     fontFamily: 'NUnitSans',
+                        //                   ),
+                        //                 ),
+                        //               ],
+                        //             )
+                        //           : Row(
+                        //               children: [
+                        //                 2.w.widthBox,
+                        //                 Padding(
+                        //                   padding: const EdgeInsets.only(
+                        //                     left: 17,
+                        //                     right: 17,
+                        //                   ),
+                        //                   child: CustomText(
+                        //                     weight: FontWeight.w600,
+                        //                     color: Colors.black,
+                        //                     text: city,
+                        //                     fontFamily: 'NunitoSans',
+                        //                     size: 12.sp,
+                        //                     // text: selectedState
+                        //                   ),
+                        //                 ),
+                        //                 const Spacer(),
+
+                        //                 2.w.widthBox,
+                        //               ],
+                        //             ),
+                        //     ),
+                        //   ),
+                        // ),
+                        3.h.heightBox,
+                        Padding(
+                          padding: const EdgeInsets.only(left: 17, right: 17),
+                          child: CustomText(
+                            text: 'Your Last Degree',
+                            size: 15.sp,
+                            color: Colors.black,
+                            weight: FontWeight.w700,
+                            fontFamily: 'Nunito Sans',
+                          ).objectTopLeft(),
+                        ),
+                        // 1.h.heightBox,
+                        1.h.heightBox,
+                        Container(
+                          height: 7.h,
+                          width: 90.w,
+                          decoration: BoxDecoration(
+                            color: const Color(0xffFFFFFF), // Solid white color
+                            border: Border.all(color: const Color(0xffBCBCBC)),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.only(top: 7),
+                            child: DropdownButton(
+                              underline: const SizedBox(),
+                              hint: _dropDownValue3 == null
+                                  ? CustomText(
+                                      size: 14.sp,
+                                      text: 'Select degree',
+                                      color: Colors.black,
+                                      weight: FontWeight.w600,
+                                      fontFamily: 'Nunito Sans',
+                                    )
+                                  : CustomText(
+                                      size: 12.sp,
+                                      text: _dropDownValue3,
+                                      color: Colors.black,
+                                      weight: FontWeight.w600,
+                                      fontFamily: 'Nunito Sans',
+                                    ),
+                              isExpanded: true,
+                              iconSize: 30.0,
+                              icon: const Icon(
+                                Icons.arrow_drop_down_rounded,
+                                color: Colors.black,
+                              ),
+                              iconDisabledColor: Colors.black,
+                              iconEnabledColor: Colors.black,
+                              style: const TextStyle(color: Colors.black),
+                              items:
+                                  [
+                                    "High School",
+                                    "GED ",
+                                    "Associate's Degree",
+                                    "Bachelor's Degree",
+                                    "Master's Degree",
+                                    "Doctorate (Ph.D.)",
+                                    "Professional ",
+                                    "Vocational ",
+                                    "Trade School ",
+
+                                    "Diploma ",
+                                    "Undergraduate ",
+                                    "Postgraduate ",
+                                    "Honors ",
+
+                                    "Other ",
+                                  ].map((val) {
+                                    return DropdownMenuItem<String>(
+                                      value: val,
+                                      child: Text(val),
+                                    );
+                                  }).toList(),
+                              onChanged: (val) {
+                                setState(() {
+                                  degree.text = val.toString();
+                                  _dropDownValue3 = val;
+                                });
+                              },
+                            ).pSymmetric(h: 10),
+                          ),
+                        ),
+                        3.h.heightBox,
+                        Padding(
+                          padding: const EdgeInsets.only(left: 17, right: 17),
+                          child: CustomText(
+                            text: 'Profession',
+                            size: 15.sp,
+                            color: Colors.black,
+                            weight: FontWeight.w700,
+                            fontFamily: 'Nunito Sans',
+                          ).objectTopLeft(),
+                        ),
+                        // 1.h.heightBox,
+                        1.h.heightBox,
+                        Padding(
+                          padding: const EdgeInsets.only(left: 17, right: 17),
+                          child: Container(
+                            height: 7.h,
+                            width: 90.w,
+                            decoration: BoxDecoration(
+                              color: const Color(
+                                0xffFFFFFF,
+                              ), // Solid white color
+                              border: Border.all(
+                                color: const Color(0xffBCBCBC),
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                left: 7,
+                                top: 7,
+                              ), // Add padding to the left and right
+                              child: DropdownButton(
+                                underline: const SizedBox(),
+                                hint: _dropDownValue4 == null
+                                    ? CustomText(
+                                        size: 14.sp,
+                                        text: 'Select profession',
+                                        color: Colors.black,
+                                        weight: FontWeight.w600,
+                                        fontFamily: 'Nunito Sans',
+                                      )
+                                    : CustomText(
+                                        size: 12.sp,
+                                        text: _dropDownValue4,
+                                        color: Colors.black,
+                                        weight: FontWeight.w600,
+                                        fontFamily: 'Nunito Sans',
+                                      ),
+                                isExpanded: true,
+                                iconSize: 30.0,
+                                icon: const Icon(
+                                  Icons.arrow_drop_down_rounded,
+                                  color: Colors.black,
+                                ),
+                                iconDisabledColor: Colors.black,
+                                iconEnabledColor: Colors.black,
+                                style: const TextStyle(color: Colors.black),
+                                items:
+                                    [
+                                      "Business Man",
+                                      "Teacher",
+                                      "Doctor",
+                                      "Engineer",
+                                      "Police Officer",
+                                      "IAS Officer",
+                                      "Nurse",
+                                      "Lawyer",
+                                      "Architect",
+                                      "Scientist",
+                                      "Pharmacist",
+                                      "Journalist",
+                                      "Accountant",
+                                      "Chef",
+                                      "Artist",
+                                      "Musician",
+                                      "Plumber",
+                                      "Electrician",
+                                      "Mechanic",
+                                      "Pilot",
+                                      "Flight Attendant",
+                                      "Graphic Designer",
+                                      "Web Developer",
+                                      "Software Engineer",
+                                      "Data Scientist",
+                                      "HR Manager",
+                                      "Marketing Manager",
+                                      "Financial Analyst",
+                                      "Real Estate Agent",
+                                      "Sales Manager",
+                                      "Social Worker",
+                                      "Counselor",
+                                      "Librarian",
+                                      "Veterinarian",
+                                      "Physical Therapist",
+                                      "Occupational Therapist",
+                                      "Radiologist",
+                                      "Surgeon",
+                                      "Dentist",
+                                      "Optometrist",
+                                      "Public Relations Specialist",
+                                      "Event Planner",
+                                      "Interior Designer",
+                                      "Fashion Designer",
+                                      "Researcher",
+                                      "Biologist",
+                                      "Chemist",
+                                      "Historian",
+                                      "Economist",
+                                      "Geologist",
+                                      "Meteorologist",
+                                      "Astronomer",
+                                      "Sociologist",
+                                      "Anthropologist",
+                                      "Philosopher",
+                                      "Theologian",
+                                      "Cryptocurrency Analyst",
+                                      "Investment Banker",
+                                      "Insurance Agent",
+                                      "Supply Chain Manager",
+                                      "Logistics Coordinator",
+                                      "Construction Manager",
+                                      "Architectural Drafter",
+                                      "Landscaper",
+                                      "Chef",
+                                      "Baker",
+                                      "Barista",
+                                      "Waiter",
+                                      "Bartender",
+                                      "Personal Trainer",
+                                      "Fitness Instructor",
+                                      "Yoga Instructor",
+                                      "Massage Therapist",
+                                      "Travel Agent",
+                                      "Tour Guide",
+                                      "Photographer",
+                                      "Videographer",
+                                      "Actor",
+                                      "Director",
+                                      "Screenwriter",
+                                      "Producer",
+                                      "Voice Actor",
+                                      "Editor",
+                                      "Publisher",
+                                    ].map((val) {
+                                      return DropdownMenuItem<String>(
+                                        value: val,
+                                        child: Text(val),
+                                      );
+                                    }).toList(),
+                                onChanged: (val) {
+                                  setState(() {
+                                    relationShipStatus.text = val.toString();
+                                    _dropDownValue4 = val;
+                                  });
+                                },
+                                alignment: Alignment
+                                    .centerLeft, // Align the text to the left
+                              ),
+                            ),
+                          ),
+                        ),
+                        5.h.heightBox,
+                        GestureDetector(
+                          onTap: () {
+                            if (widget.gendername != null &&
+                                widget.iamInterstedname != null &&
+                                widget.sexualorientationList.isNotEmpty &&
+                                height != null &&
+                                selectedState != null &&
+                                city != null &&
+                                _dropDownValue3 != null &&
+                                _dropDownValue4 != null) {
+                              log(
+                                "All fields are filled: ${widget.iamInterstedname}",
+                              );
+                              context
+                                  .read<BasicInformationCubit>()
+                                  .basicinformation(
+                                    context,
+                                    widget.gendername,
+                                    widget.iamInterstedname,
+                                    widget.sexualorientationList,
+                                    height.toInt().toString(),
+                                    selectedState,
+                                    city,
+                                    _dropDownValue3,
+                                    _dropDownValue4,
+                                  );
+
+                              // Navigator.push(
+                              //   context,
+                              //   MaterialPageRoute(
+                              //       builder: (context) => MoreAboutMeScreen()),
+                              // );
+                            } else {
+                              // Not all fields are filled, show an alert box
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertBox(
+                                    title:
+                                        "Please fill all the basic information.",
+                                  );
+                                },
+                              );
+                            }
+                          },
+                          child: CustomButton(text: 'Continue'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              state.status == ApiState.isLoading ? AppLoader() : Container(),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> displayPrediction(Prediction? p) async {
+    final Dio dio = Dio();
+    final response = await dio.get(
+      'https://maps.googleapis.com/maps/api/place/details/json?place_id=${p?.placeId}&key=$kGoogleApiKey',
+    );
+
+    setState(() {
+      // showLocation = false;
+      selectedState = p?.description ?? "";
+      // LatitudeForLogin = p?.lat ?? "";
+      // Longitudeforlogin = p?.lng ?? "";
+      selectedCountry =
+          "${(response.data["result"]['address_components'] as List).where((e) {
+            return (e["types"] as List).contains("country");
+          }).first["short_name"]}";
+      // isdController.text = countryLists
+      //     .where((e) {
+      //       return e["code"] == selectedCountry;
+      //     })
+      //     .first["dial_code"]
+      //     .toString()
+      //     .replaceAll("+", "");
+    });
+  }
+}

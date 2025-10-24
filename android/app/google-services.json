@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "594982369496",
+    "project_id": "datingcoretta",
+    "storage_bucket": "datingcoretta.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:594982369496:android:8e67bff32dd14aa3d6ffad",
+        "android_client_info": {
+          "package_name": "com.dating.corretta"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "594982369496-9jprbtus018l2g7f3m2658mg8uq3iq0o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dating.corretta",
+            "certificate_hash": "1436d0ddae2cb51ebe35b95430107c0a7eb45831"
+          }
+        },
+        {
+          "client_id": "594982369496-3jajhpjontas7bbcgmdp4nl0jdog9l0k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDI0dyNupe-2dbGVTDSXBKXvQUtD4twe98"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "594982369496-3jajhpjontas7bbcgmdp4nl0jdog9l0k.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "594982369496-16vdtcj03utg7iuttrlfsouvvl60206g.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.dating.corretta"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

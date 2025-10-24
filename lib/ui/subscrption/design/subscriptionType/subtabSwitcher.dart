@@ -1,0 +1,138 @@
+import 'package:demoproject/ui/subscrption/design/subscriptionType/silver.dart';
+import 'package:flutter/material.dart';
+import 'package:sizer/sizer.dart';
+import '../../../../component/commonfiles/appcolor.dart';
+import '../../../../component/reuseable_widgets/appBar.dart';
+import 'free.dart';
+import 'gold.dart';
+
+class SubTabSwitcher extends StatefulWidget {
+  @override
+  _SubTabSwitcherState createState() => _SubTabSwitcherState();
+}
+
+class _SubTabSwitcherState extends State<SubTabSwitcher> {
+  int _selectedIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: appBarWidgetThree(
+          leading: Padding(
+            padding: const EdgeInsets.only(left: 5.0),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.of(context).pop();
+              },
+              child: Transform.scale(
+                scale: 0.5,
+                child: Image.asset(
+                  'assets/images/backarrow.png',
+                  height: 50,
+                  width: 50,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ),
+          title: 'Select Subscription',
+          titleColor: Colors.black,
+          backgroundColor: Colors.white,
+          centerTitle: true,
+          showBorder: false
+      ),
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 5.w),
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColor.tinderclr.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(40.0),
+              ),
+              child: Stack(
+                children: [
+                  AnimatedAlign(
+                    duration: Duration(milliseconds: 300),
+                    alignment: _selectedIndex == 0
+                        ? Alignment.centerLeft
+                        : _selectedIndex == 1
+                        ? Alignment.center
+                        : Alignment.centerRight,
+                    child: Container(
+                      width: MediaQuery.of(context).size.width * 0.3,
+                      height: 40, // Reduced height for the slider
+                      decoration: BoxDecoration(
+                        color: AppColor.tinderclr,
+                        borderRadius: BorderRadius.circular(40.0),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildTab(
+                        title: 'Free',
+                        isSelected: _selectedIndex == 0,
+                        onTap: () => _onTabTapped(0),
+                      ),
+                      _buildTab(
+                        title: 'Silver',
+                        isSelected: _selectedIndex == 1,
+                        onTap: () => _onTabTapped(1),
+                      ),
+                      _buildTab(
+                        title: 'Gold',
+                        isSelected: _selectedIndex == 2,
+                        onTap: () => _onTabTapped(2),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+          Expanded(
+            child: _selectedIndex == 0
+                ? Free()
+                : _selectedIndex == 1
+                ? Silver()
+                : Gold(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTab({required String title, required bool isSelected, required VoidCallback onTap}) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 40, // Reduced height for the tabs
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(40.0),
+          ),
+          child: Text(
+            title,
+            style: TextStyle(
+              color: isSelected ? Colors.white : AppColor.tinderclr,
+              fontWeight: FontWeight.bold,
+              fontSize: 18.sp, // Slightly reduced font size for better fit
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _onTabTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+}

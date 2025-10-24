@@ -1,0 +1,138 @@
+import 'package:demoproject/ui/dashboard/filter/cubit/filtercubit.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:group_button/group_button.dart';
+import 'package:sizer/sizer.dart';
+
+import '../../../component/commonfiles/appcolor.dart';
+import '../../../component/reuseable_widgets/appBar.dart';
+import '../../../component/reuseable_widgets/custom_button.dart';
+import '../../../component/utils/custom_text.dart';
+
+class FilterDoTheyExercise extends StatefulWidget {
+  const FilterDoTheyExercise({Key? key}) : super(key: key);
+
+  @override
+  State<FilterDoTheyExercise> createState() => _FilterDoTheyExerciseState();
+}
+
+class _FilterDoTheyExerciseState extends State<FilterDoTheyExercise> {
+  final List<String> fitnessLevels = [
+    "Active",
+    "Sometimes",
+    "Not Serious",
+    "Never",
+  ];
+
+  final GroupButtonController controller = GroupButtonController();
+  String selectedButton = "";
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: appBarWidgetThree(
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 5.0),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.of(context).pop();
+            },
+            child: Transform.scale(
+              scale: 0.5,
+              child: Image.asset(
+                'assets/images/backarrow.png',
+                height: 50,
+                width: 50,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ),
+        title: 'Do They Exercise',
+        titleColor: Colors.black,
+        backgroundColor: Colors.white,
+        centerTitle: true,
+        showBorder: false,
+      ),
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          Spacer(),
+          Container(
+            height: MediaQuery.of(context).size.height * .87,
+            width: MediaQuery.of(context).size.width,
+            decoration: BoxDecoration(
+              color: Color(0xffFFC8D3), // Background color for the container
+              borderRadius: BorderRadius.only(topLeft:Radius.circular(45),topRight:Radius.circular(45)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(18.0),
+                    child: CustomText(
+                      size: 18,
+                      maxLines: 2,
+                      text: 'Select the fitness level of your loved one as per your preference.',
+                      color: Colors.black,
+                      weight: FontWeight.w400,
+                      fontFamily: '',
+                    ),
+                  ),
+                  Center(
+                    child: GroupButton(
+                      controller: controller,
+                      isRadio: true,
+                      maxSelected: 1,
+                      buttons: fitnessLevels,
+                      onSelected: (value, index, isSelected) {
+                        setState(() {
+                          selectedButton = value.toString();
+                        });
+                      },
+                      options: GroupButtonOptions(
+                        selectedTextStyle: TextStyle(
+                          fontSize: 12.sp,
+                          color: bgClr,
+                        ),
+                        selectedColor: Colors.white,
+                        unselectedShadow: const [],
+                        unselectedColor: Colors.transparent,
+                        selectedBorderColor: bgClr,
+                        unselectedBorderColor: Colors.transparent,
+                        borderRadius: BorderRadius.circular(30),
+                        spacing: 1.h,
+                        runSpacing: 1.h,
+                        groupingType: GroupingType.column,
+                        direction: Axis.horizontal,
+                        buttonHeight: 6.h,
+                        buttonWidth: 45.w,
+                        mainGroupAlignment: MainGroupAlignment.start,
+                        crossGroupAlignment: CrossGroupAlignment.start,
+                        groupRunAlignment: GroupRunAlignment.start,
+                        textAlign: TextAlign.center,
+                        textPadding: EdgeInsets.zero,
+                        alignment: Alignment.center,
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                  Spacer(),
+                  GestureDetector(
+                    onTap: () {
+                      context.read<FilterCubit>().doExerciseUpdate(selectedButton);
+                      Navigator.pop(context);
+                    },
+                    child: CustomButton(text: 'Apply Filter'),
+                  ),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.1),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
