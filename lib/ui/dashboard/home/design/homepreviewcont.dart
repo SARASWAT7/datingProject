@@ -1,5 +1,6 @@
+// ignore_for_file: library_private_types_in_public_api
+
 import 'dart:async';
-import 'dart:ui';
 import 'package:demoproject/component/apihelper/normalmessage.dart';
 import 'package:demoproject/component/apihelper/advanced_performance_optimizer.dart';
 import 'package:demoproject/component/commonfiles/appcolor.dart';
@@ -14,21 +15,20 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sizer/sizer.dart';
 import 'package:velocity_x/velocity_x.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../auth/design/splash.dart';
 import '../../../match/agree.dart';
 import 'introscreen.dart';
-
 
 class HomePreviewContainer extends StatefulWidget {
   final Users? response;
   final int imageIndex;
   final bool first;
 
-  HomePreviewContainer({
+  const HomePreviewContainer({
     super.key,
     this.response,
     this.first = true,
-    required this.imageIndex, required int index,
+    required this.imageIndex,
+    required int index,
   });
 
   @override
@@ -37,7 +37,7 @@ class HomePreviewContainer extends StatefulWidget {
 
 class _HomePreviewContainerState extends State<HomePreviewContainer> {
   late PageController _pageController;
-  late Timer _timer;
+  Timer? _timer;
   String token = "";
 
   int _currentPage = 0;
@@ -45,9 +45,7 @@ class _HomePreviewContainerState extends State<HomePreviewContainer> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(
-        initialPage: widget.imageIndex
-    );
+    _pageController = PageController(initialPage: widget.imageIndex);
     _currentPage = widget.imageIndex;
     _startAutoSlide();
     _preloadImages();
@@ -75,33 +73,58 @@ class _HomePreviewContainerState extends State<HomePreviewContainer> {
   }
 
   void _startAutoSlide() {
+    // Prevent starting multiple timers
+    if (_timer?.isActive ?? false) return;
+
     _timer = Timer.periodic(const Duration(seconds: 3), (timer) {
-      if (_currentPage < (widget.response?.media?.length ?? 0) - 1) {
+      // If widget is no longer in the tree, stop the timer
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      final mediaCount = widget.response?.media?.length ?? 0;
+      if (mediaCount <= 1) return; // no need to slide
+
+      if (_currentPage < mediaCount - 1) {
         _currentPage++;
       } else {
         _currentPage = 0;
       }
-      _pageController.animateToPage(
-        _currentPage,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
+
+      // Only call animateToPage when the controller is attached to a PageView
+      if (_pageController.hasClients) {
+        try {
+          _pageController.animateToPage(
+            _currentPage,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        } catch (e) {
+          // Swallow errors to avoid crashes from race conditions
+          // (e.g. controller detached between hasClients check and animate call)
+          // Optionally log for diagnostics.
+          // debugPrint('Auto-slide animateToPage error: $e');
+        }
+      }
     });
   }
 
   @override
   void dispose() {
     _stopAutoSlide();
-    _timer.cancel();
+    // Ensure timer is cancelled safely
+    _timer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
 
   void _stopAutoSlide() {
-    _timer.cancel();
+    if (_timer != null && _timer!.isActive) {
+      _timer!.cancel();
+    }
+    _timer = null;
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -118,402 +141,413 @@ class _HomePreviewContainerState extends State<HomePreviewContainer> {
         width: MediaQuery.of(context).size.width,
         child: mediaLength > 0
             ? Stack(
-          children: [
-            PageView.builder(
-              controller: _pageController,
-              itemCount: mediaLength,
-              physics: const ClampingScrollPhysics(),
-              onPageChanged: (index) {
-                setState(() {
-                  _currentPage = index;
-                });
-              },
-              itemBuilder: (context, index) {
-                return Container(
-                  height: 70.h,
-                  width: MediaQuery.of(context).size.width,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30),
+                children: [
+                  PageView.builder(
+                    controller: _pageController,
+                    itemCount: mediaLength,
+                    physics: const ClampingScrollPhysics(),
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentPage = index;
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      return Container(
+                        height: 70.h,
+                        width: MediaQuery.of(context).size.width,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: AdvancedPerformanceOptimizer.buildUltraFastImage(
+                          imageUrl: widget.response?.media?[index] ?? "",
+                          width: MediaQuery.of(context).size.width,
+                          height: 70.h,
+                          fit: BoxFit.cover,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      );
+                    },
                   ),
-                  child: AdvancedPerformanceOptimizer.buildUltraFastImage(
-                    imageUrl: widget.response?.media?[index] ?? "",
-                    width: MediaQuery.of(context).size.width,
-                    height: 70.h,
-                    fit: BoxFit.cover,
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                );
-              },
-            ),
-            if (mediaLength > 1)
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      mediaLength,
-                          (i) => _buildIndicator(i == _currentPage),
-                    ),
-                  ),
-                ),
-              ),
-            Column(
-              children: [
-                widget.first == false
-                    ? SpaceWidget()
-                    : Row(
-                  children: [
+                  if (mediaLength > 1)
                     Align(
-                      alignment: Alignment.centerLeft,
-                      child: GestureDetector(
-                        onTap: (){
-                          CustomNavigator.push(context: context, screen: AgreeScreen(
-                            UserName:widget.response!.firstName??"",
-                            UserImg:widget.response!.profilePicture??"",
-                            userId: widget.response?.id ?? "",
-                          ));
-                        },
-                        child: Container(
-                          height: 5.h,
-                          width: 5.h,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
+                      alignment: Alignment.bottomCenter,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(
+                            mediaLength,
+                            (i) => _buildIndicator(i == _currentPage),
+                          ),
+                        ),
+                      ),
+                    ),
+                  Column(
+                    children: [
+                      widget.first == false
+                          ? SpaceWidget()
+                          : Row(
+                              children: [
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      CustomNavigator.push(
+                                        context: context,
+                                        screen: AgreeScreen(
+                                          UserName:
+                                              widget.response!.firstName ?? "",
+                                          UserImg:
+                                              widget.response!.profilePicture ??
+                                              "",
+                                          userId: widget.response?.id ?? "",
+                                        ),
+                                      );
+                                    },
+                                    child: Container(
+                                      height: 5.h,
+                                      width: 5.h,
+                                      decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.white,
+                                      ),
+                                      child: Center(
+                                        child: AppText(
+                                          maxlin: 1,
+                                          fontWeight: FontWeight.w600,
+                                          size: 13.sp,
+                                          text:
+                                              "${widget.response!.questionAnswerPercentage?.toStringAsFixed(1) ?? '0.0'}% ",
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const Spacer(),
+                                PopupMenuButton(
+                                  elevation: 1,
+                                  padding: EdgeInsets.zero,
+                                  color: AppColor.tinderclr,
+                                  icon: Icon(
+                                    Icons.more_vert,
+                                    color: whitecolor,
+                                    size: 20.sp,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(25),
+                                  ),
+                                  itemBuilder: (_) => <PopupMenuItem<String>>[
+                                    PopupMenuItem<String>(
+                                      value: 'report',
+                                      child: Column(
+                                        children: [
+                                          2.h.heightBox,
+                                          AppText(
+                                            fontWeight: FontWeight.w400,
+                                            size: 2.h,
+                                            color: Colors.white,
+                                            text: "Report User",
+                                          ).centered(),
+                                          1.h.heightBox,
+                                        ],
+                                      ),
+                                    ),
+                                    PopupMenuItem<String>(
+                                      value: 'block',
+                                      child: Column(
+                                        children: [
+                                          const Divider(color: Colors.white),
+                                          2.h.heightBox,
+                                          AppText(
+                                            fontWeight: FontWeight.w400,
+                                            size: 2.h,
+                                            color: Colors.white,
+                                            text: "Block User",
+                                          ),
+                                          1.h.heightBox,
+                                        ],
+                                      ),
+                                    ),
+                                    PopupMenuItem<String>(
+                                      value: 'spam',
+                                      child: Column(
+                                        children: [
+                                          const Divider(color: Colors.white),
+                                          2.h.heightBox,
+                                          AppText(
+                                            fontWeight: FontWeight.w400,
+                                            size: 2.h,
+                                            color: Colors.white,
+                                            text: "Spam User",
+                                          ),
+                                          1.h.heightBox,
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                  onSelected: (value) {
+                                    if (value == 'report') {
+                                      showDialog(
+                                        context: context,
+                                        builder: (_) => ReportBox(
+                                          title:
+                                              widget.response?.firstName ?? "",
+                                          userId: widget.response?.id ?? "",
+                                        ),
+                                      );
+                                    } else if (value == 'block') {
+                                      showDialog(
+                                        context: context,
+                                        builder: (_) => BlockBox(
+                                          title:
+                                              widget.response?.firstName ?? "",
+                                          userId: widget.response?.id ?? "",
+                                        ),
+                                      );
+                                    } else if (value == 'spam') {
+                                      showDialog(
+                                        context: context,
+                                        builder: (_) => SpamBox(
+                                          title:
+                                              widget.response?.firstName ?? "",
+                                          userId: widget.response?.id ?? "",
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                      widget.first == false
+                          ? SpaceWidget()
+                          : SpaceWidget(
+                              height: DynamicSize.height(context) * 0.01,
+                            ),
+                      widget.first == false
+                          ? SpaceWidget()
+                          : Align(
+                              alignment: Alignment.centerLeft,
+                              child: Container(),
+                            ),
+                      const Spacer(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Container(
+                            constraints: BoxConstraints(maxWidth: 60.w),
+                            child: AppText(
+                              fontWeight: FontWeight.w700,
+                              size: 22.sp,
+                              maxlin: 1,
+                              text: widget.response?.age.toString() != "0"
+                                  ? '${widget.response?.firstName} , ${widget.response?.age.toString() ?? ""}'
+                                  : "${widget.response?.lastName} ",
+                              color: Colors.white,
+                            ),
+                          ),
+                          widget.response?.profileVerified == false
+                              ? Container(
+                                  height: 3.h,
+                                  width: 3.h,
+                                  decoration: const BoxDecoration(
+                                    image: DecorationImage(
+                                      image: AssetImage(
+                                        "assets/images/verify.png",
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : Container(),
+                        ],
+                      ),
+                      2.h.heightBox,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.location_pin,
+                            color: Colors.white,
+                            size: 18.sp,
+                          ),
+                          1.w.widthBox,
+                          AppText(
+                            maxlin: 1,
+                            fontWeight: FontWeight.w500,
+                            size: 14.sp,
+                            text:
+                                "${widget.response?.city}${widget.response!.city!.isEmpty ? '' : ','} ${widget.response?.country}",
                             color: Colors.white,
                           ),
-                          child: Center(
-                            child: AppText(
-                              maxlin: 1,
-                              fontWeight: FontWeight.w600,
-                              size: 13.sp,
-                              text: "${widget.response!.questionAnswerPercentage?.toStringAsFixed(1) ?? '0.0'}% ",
-                              color: Colors.black,
-                            ),
-                          ),
-                        ),
+                          const Spacer(),
+                        ],
                       ),
-                    ),
-                    const Spacer(),
-                    PopupMenuButton(
-                      elevation: 1,
-                      padding: EdgeInsets.zero,
-                      color: AppColor.tinderclr,
-                      icon: Icon(
-                        Icons.more_vert,
-                        color: whitecolor,
-                        size: 20.sp,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      itemBuilder: (_) => <PopupMenuItem<String>>[
-                        PopupMenuItem<String>(
-                          value: 'report',
-                          child: Column(
-                            children: [
-                              2.h.heightBox,
-                              AppText(
-                                fontWeight: FontWeight.w400,
-                                size: 2.h,
-                                color: Colors.white,
-                                text: "Report User",
-                              ).centered(),
-                              1.h.heightBox,
-                            ],
-                          ),
-                        ),
-                        PopupMenuItem<String>(
-                          value: 'block',
-                          child: Column(
-                            children: [
-                              const Divider(color: Colors.white),
-                              2.h.heightBox,
-                              AppText(
-                                fontWeight: FontWeight.w400,
-                                size: 2.h,
-                                color: Colors.white,
-                                text: "Block User",
-                              ),
-                              1.h.heightBox,
-                            ],
-                          ),
-                        ),
-                        PopupMenuItem<String>(
-                          value: 'spam',
-                          child: Column(
-                            children: [
-                              const Divider(color: Colors.white),
-                              2.h.heightBox,
-                              AppText(
-                                fontWeight: FontWeight.w400,
-                                size: 2.h,
-                                color: Colors.white,
-                                text: "Spam User",
-                              ),
-                              1.h.heightBox,
-                            ],
-                          ),
-                        ),
-                      ],
-                      onSelected: (value) {
-                        if (value == 'report') {
-                          showDialog(
-                            context: context,
-                            builder: (_) => ReportBox(
-                              title:
-                              widget.response?.firstName ?? "",
-                              userId: widget.response?.id ?? "",
-                            ),
-                          );
-                        } else if (value == 'block') {
-                          showDialog(
-                            context: context,
-                            builder: (_) => BlockBox(
-                              title:
-                              widget.response?.firstName ?? "",
-                              userId: widget.response?.id ?? "",
-                            ),
-                          );
-                        }
-                        else if (value == 'spam') {
-                          showDialog(
-                            context: context,
-                            builder: (_) => SpamBox(
-                              title:
-                              widget.response?.firstName ?? "",
-                              userId: widget.response?.id ?? "",
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                  ],
-                ),
-                widget.first == false
-                    ? SpaceWidget()
-                    : SpaceWidget(
-                    height: DynamicSize.height(context) * 0.01),
-                widget.first == false
-                    ? SpaceWidget()
-                    : Align(
-                  alignment: Alignment.centerLeft,
-                  child: Container(
-
-                  ),
-                ),
-                const Spacer(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Container(
-                      constraints: BoxConstraints(maxWidth: 60.w),
-                      child: AppText(
-                        fontWeight: FontWeight.w700,
-                        size: 22.sp,
-                        maxlin: 1,
-                        text: widget.response?.age.toString() != "0"
-                            ? '${widget.response?.firstName} , ${widget.response?.age.toString() ?? ""}'
-                            : "${widget.response?.lastName} ",
-                        color: Colors.white,
-                      ),
-                    ),
-                    widget.response?.profileVerified == false
-                        ? Container(
-                      height: 3.h,
-                      width: 3.h,
-                      decoration: const BoxDecoration(
-                        image: DecorationImage(
-                          image: AssetImage("assets/images/verify.png"),
-                        ),
-                      ),
-                    )
-                        : Container(),
-                  ],
-                ),
-                2.h.heightBox,
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.location_pin,
-                      color: Colors.white,
-                      size: 18.sp,
-                    ),
-                    1.w.widthBox,
-                    AppText(
-                      maxlin: 1,
-                      fontWeight: FontWeight.w500,
-                      size: 14.sp,
-                      text:
-                      "${widget.response?.city}${widget.response!.city!.isEmpty ? '' : ','} ${widget.response?.country}",
-                      color: Colors.white,
-                    ),
-                    const Spacer(),
-                  ],
-                ),
-                0.5.h.heightBox,
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: AppText(
-                    maxlin: 1,
-                    fontWeight: FontWeight.w500,
-                    size: 14.sp,
-                    text: "${widget.response!.distance} Miles Away",
-                    color: Colors.white,
-                  ),
-                ),
-                widget.response?.isOnline == true
-                    ? Align(
-                  alignment: Alignment.centerLeft,
-                  child: Container(
-                    height: DynamicSize.height(context) * .03,
-                    width: 28.w,
-                    decoration: BoxDecoration(
-                      color:
-                      const Color(0xff1B8500).withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: const Color(0xff3B8B39),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          height: 1.5.h,
-                          width: 1.5.h,
-                          decoration: BoxDecoration(
-                            color: const Color(0xff85E882),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: const Color(0xff3B8B39),
-                              width: .7.w,
-                            ),
-                          ),
-                        ).pOnly(left: 1.w),
-                        2.w.widthBox,
-                        AppText(
-                          color: AppColor.white,
-                          fontWeight: FontWeight.w600,
+                      0.5.h.heightBox,
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: AppText(
+                          maxlin: 1,
+                          fontWeight: FontWeight.w500,
                           size: 14.sp,
-                          text: "Active Now",
+                          text: "${widget.response!.distance} Miles Away",
+                          color: Colors.white,
                         ),
-                      ],
-                    ),
+                      ),
+                      widget.response?.isOnline == true
+                          ? Align(
+                              alignment: Alignment.centerLeft,
+                              child: Container(
+                                height: DynamicSize.height(context) * .03,
+                                width: 28.w,
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xff1B8500,
+                                  ).withOpacity(0.5),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: const Color(0xff3B8B39),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      height: 1.5.h,
+                                      width: 1.5.h,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xff85E882),
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: const Color(0xff3B8B39),
+                                          width: .7.w,
+                                        ),
+                                      ),
+                                    ).pOnly(left: 1.w),
+                                    2.w.widthBox,
+                                    AppText(
+                                      color: AppColor.white,
+                                      fontWeight: FontWeight.w600,
+                                      size: 14.sp,
+                                      text: "Active Now",
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          : Container(),
+                      SpaceWidget(height: DynamicSize.width(context) * .04),
+                      widget.first == false
+                          ? SpaceWidget()
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  height: DynamicSize.height(context) * 0.06,
+                                  width: DynamicSize.width(context) * .07,
+                                  decoration: BoxDecoration(
+                                    color: whitecolor.withOpacity(0.5),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.close,
+                                    size: 25.sp,
+                                    color: AppColor.tinderclr,
+                                  ),
+                                ).onTap(() {
+                                  if (token.isEmpty) {
+                                    print(
+                                      "❌ Token is empty, cannot perform dislike action",
+                                    );
+                                    return;
+                                  }
+                                  context.read<HomePageCubit>().likeSidlike(
+                                    context,
+                                    widget.response?.id ?? "",
+                                    'dislike',
+                                    token,
+                                    widget.response?.firstName ?? "",
+                                  );
+                                }),
+                                Container(
+                                  height: DynamicSize.height(context) * 0.06,
+                                  width: DynamicSize.width(context) * .07,
+                                  decoration: BoxDecoration(
+                                    color: whitecolor.withOpacity(0.5),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.send,
+                                    size: 25.sp,
+                                    color: Colors.white,
+                                  ),
+                                ).onTap(() {
+                                  print("pushkar$token");
+                                  showModalBottomSheet(
+                                    isScrollControlled: true,
+                                    context: context,
+                                    backgroundColor: Colors.transparent,
+                                    constraints: BoxConstraints(
+                                      maxHeight: 150.h,
+                                    ),
+                                    builder: (_) => IntroBottomSheet(
+                                      userId: widget.response?.id ?? "",
+                                      profilePicture:
+                                          widget.response?.profilePicture ?? "",
+                                      firstName: widget.response!.firstName
+                                          .toString(),
+                                    ),
+                                  );
+                                }),
+
+                                Container(
+                                  height: DynamicSize.height(context) * 0.06,
+                                  width: DynamicSize.width(context) * .07,
+                                  decoration: BoxDecoration(
+                                    color: whitecolor.withOpacity(0.5),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.favorite,
+                                    size: 25.sp,
+                                    color: const Color(0xffFF281B),
+                                  ),
+                                ).onTap(() {
+                                  print("pushkar$token");
+
+                                  if (token.isEmpty) {
+                                    print(
+                                      "❌ Token is empty, cannot perform like action",
+                                    );
+                                    return;
+                                  }
+
+                                  context.read<HomePageCubit>().likeSidlike(
+                                    context,
+                                    widget.response?.id ?? "",
+                                    'like',
+                                    token,
+                                    widget.response?.firstName ?? "",
+                                  );
+                                }),
+                              ],
+                            ),
+                      SpaceWidget(height: DynamicSize.width(context) * .03),
+                    ],
+                  ).pOnly(
+                    top: DynamicSize.height(context) * 0.01,
+                    bottom: DynamicSize.height(context) * 0.01,
+                    left: DynamicSize.width(context) * .02,
+                    right: DynamicSize.width(context) * .02,
                   ),
-                )
-                    : Container(),
-                SpaceWidget(height: DynamicSize.width(context) * .04),
-                widget.first == false
-                    ? SpaceWidget()
-                    : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      height: DynamicSize.height(context) * 0.06,
-                      width: DynamicSize.width(context) * .07,
-                      decoration: BoxDecoration(
-                        color: whitecolor.withOpacity(0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.close,
-                        size: 25.sp,
-                        color: AppColor.tinderclr,
-                      ),
-                    ).onTap(() {
-                      if (token.isEmpty) {
-                        print("❌ Token is empty, cannot perform dislike action");
-                        return;
-                      }
-                      context.read<HomePageCubit>().likeSidlike(
-                        context,
-                        widget.response?.id ?? "",
-                        'dislike',
-                        token,
-                        widget.response?.firstName ?? "",
-                      );
-                    }),
-                    Container(
-                      height: DynamicSize.height(context) * 0.06,
-                      width: DynamicSize.width(context) * .07,
-                      decoration: BoxDecoration(
-                        color: whitecolor.withOpacity(0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.send,
-                        size: 25.sp,
-                        color:Colors.white,
-                      ),
-                    ).onTap(() {
-                      print("pushkar$token");
-                      showModalBottomSheet(
-                        isScrollControlled: true,
-                        context: context,
-                        backgroundColor: Colors.transparent,
-                        constraints: BoxConstraints(maxHeight: 150.h),
-                        builder: (_) => IntroBottomSheet(
-                          userId: widget.response?.id ?? "",
-                          profilePicture: widget.response?.profilePicture ?? "", firstName: widget.response!.firstName.toString(),
-
-                        ),
-                      );
-
-                    }
-                    ),
-
-                    Container(
-                      height: DynamicSize.height(context) * 0.06,
-                      width: DynamicSize.width(context) * .07,
-                      decoration: BoxDecoration(
-                        color: whitecolor.withOpacity(0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.favorite,
-                        size: 25.sp,
-                        color: const Color(0xffFF281B),
-                      ),
-                    ).onTap(() {
-                      print("pushkar$token");
-                      
-                      if (token.isEmpty) {
-                        print("❌ Token is empty, cannot perform like action");
-                        return;
-                      }
-
-                      context.read<HomePageCubit>().likeSidlike(
-                        context,
-                        widget.response?.id ?? "",
-                        'like',
-                        token,
-                        widget.response?.firstName??"",
-                      );
-
-
-                    }
-                    ),
-                  ],
-                ),
-                SpaceWidget(height: DynamicSize.width(context) * .03),
-              ],
-            ).pOnly(
-              top: DynamicSize.height(context) * 0.01,
-              bottom: DynamicSize.height(context) * 0.01,
-              left: DynamicSize.width(context) * .02,
-              right: DynamicSize.width(context) * .02,
-            ),
-          ],
-        )
+                ],
+              )
             : Center(
-          child: AppText(
-            fontWeight: FontWeight.w600,
-            size: 14.sp,
-            color: Colors.black,
-            text: 'No media available',
-          ),
-        ),
+                child: AppText(
+                  fontWeight: FontWeight.w600,
+                  size: 14.sp,
+                  color: Colors.black,
+                  text: 'No media available',
+                ),
+              ),
       ),
     );
   }
@@ -530,7 +564,6 @@ class _HomePreviewContainerState extends State<HomePreviewContainer> {
     );
   }
 }
-
 
 // class HomePreviewContainer extends StatefulWidget {
 //   final Users? response;

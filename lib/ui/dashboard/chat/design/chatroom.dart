@@ -1,7 +1,5 @@
 // ignore_for_file: prefer_typing_uninitialized_variables, no_leading_underscores_for_local_identifiers, avoid_print, unnecessary_brace_in_string_interps, deprecated_member_use, use_build_context_synchronously, empty_catches
-
 import 'dart:developer';
-import 'dart:io';
 import 'package:demoproject/component/apihelper/normalmessage.dart';
 import 'package:demoproject/component/commonfiles/appcolor.dart';
 import 'package:demoproject/component/commonfiles/shared_preferences.dart';
@@ -19,9 +17,7 @@ import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sizer/sizer.dart';
 import 'package:velocity_x/velocity_x.dart';
-
 import '../../../../component/reuseable_widgets/bottomTabBar.dart';
-import '../../../../component/utils/chatpopup.dart';
 import '../videocall/audioCall.dart';
 import '../videocall/videocall.dart';
 
@@ -51,8 +47,8 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-///////////////
-// readREcipt
+  ///////////////
+  // readREcipt
   bool isSubscribed = false;
 
   //////////////
@@ -64,19 +60,19 @@ class _ChatScreenState extends State<ChatScreen> {
         .orderBy('timestamp')
         .get()
         .then((value) {
-      for (int i = 0; i < value.docs.length; i++) {
-        if (value.docs[i]['idFrom'] == widget.otherUserId) {
-          if (value.docs[i]['isRead'] == false) {
-            FirebaseFirestore.instance
-                .collection("chatroom")
-                .doc(chatidmy)
-                .collection(chatidmy)
-                .doc(value.docs[i].id)
-                .update({"isRead": true});
+          for (int i = 0; i < value.docs.length; i++) {
+            if (value.docs[i]['idFrom'] == widget.otherUserId) {
+              if (value.docs[i]['isRead'] == false) {
+                FirebaseFirestore.instance
+                    .collection("chatroom")
+                    .doc(chatidmy)
+                    .collection(chatidmy)
+                    .doc(value.docs[i].id)
+                    .update({"isRead": true});
+              }
+            }
           }
-        }
-      }
-    });
+        });
     log("yobio2==============>");
   }
 
@@ -97,16 +93,17 @@ class _ChatScreenState extends State<ChatScreen> {
   bool isloading = false;
   bool subsStatus = false;
 
-
   ///
   @override
   void initState() {
     // Validate user IDs before creating document paths
     if (widget.userId.isEmpty || widget.otherUserId.isEmpty) {
-      log('Error: User IDs are empty - userId: ${widget.userId}, otherUserId: ${widget.otherUserId}');
+      log(
+        'Error: User IDs are empty - userId: ${widget.userId}, otherUserId: ${widget.otherUserId}',
+      );
       return;
     }
-    
+
     try {
       if (int.parse(widget.userId) > int.parse(widget.otherUserId)) {
         setroom = '${widget.userId}-${widget.otherUserId}';
@@ -135,7 +132,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (setroom.isNotEmpty) {
       readreciptupdate(setroom);
       messageCountUpdtae(setroom);
-      
+
       // Validate otherUserId before Firebase operation
       if (widget.otherUserId.isNotEmpty) {
         FirebaseFirestore.instance
@@ -143,21 +140,26 @@ class _ChatScreenState extends State<ChatScreen> {
             .doc(widget.otherUserId)
             .get()
             .then((value) {
-          setState(() {
-            devicetokenofothermer = value['deviceToken'];
-            otherusername = value['userName'];
-            otheruserId = value['user_id'];
-            log(value['deviceToken'] + "     samne vale ka device token");
-          });
-        }).catchError((error) {
-          log('Error fetching user data: $error');
-        });
+              setState(() {
+                devicetokenofothermer = value['deviceToken'];
+                otherusername = value['userName'];
+                otheruserId = value['user_id'];
+                log(value['deviceToken'] + "     samne vale ka device token");
+              });
+            })
+            .catchError((error) {
+              log('Error fetching user data: $error');
+            });
       }
-
+      updateStatus();
       // Validate userId before Firebase operation
       if (widget.userId.isNotEmpty) {
         fbCloudStore.updateMyChatListValues(
-            widget.userId, setroom, widget.otherUserId, "");
+          widget.userId,
+          setroom,
+          widget.otherUserId,
+          "",
+        );
       }
     }
 
@@ -208,51 +210,144 @@ class _ChatScreenState extends State<ChatScreen> {
     return _returnList;
   }
 
+  String update() {
+    if (int.parse(widget.userId) > int.parse(widget.otherUserId)) {
+      return '${widget.userId}-${widget.otherUserId}';
+      // roomid = widget.userId + widget.otherUserId;
+    } else {
+      return '${widget.otherUserId}-${widget.userId}';
+    }
+  }
+
+  Future<bool> updateStatus() async {
+    bool otheruserStatus = false;
+    await FirebaseFirestore.instance
+        .collection("Status")
+        .doc(update())
+        .get()
+        .then((value) {
+          log("message${value.data()} hello");
+          otheruserStatus = value.data()?[widget.otherUserId] ?? false;
+        })
+        .onError((error, stackTrace) {
+          log(error.toString());
+        });
+
+    await FirebaseFirestore.instance
+        .collection("Status")
+        .doc(update())
+        .set({widget.userId: true, widget.otherUserId: otheruserStatus})
+        .then((value) {
+          log(
+            "hello ${{widget.userId: true, widget.otherUserId: otheruserStatus}} ",
+          );
+        })
+        .onError((error, stackTrace) {
+          log(error.toString());
+        });
+    log("message hello$otheruserStatus ${widget.otherUserId}");
+    return otheruserStatus;
+  }
+
+  updateMyStatustofalse() async {
+    bool otheruserStatus = false;
+    await FirebaseFirestore.instance
+        .collection("Status")
+        .doc(update())
+        .get()
+        .then((value) {
+          print("message${value.data()} hello");
+          otheruserStatus = value.data()?[widget.otherUserId] ?? false;
+        })
+        .onError((error, stackTrace) {
+          log(error.toString());
+        });
+
+    await FirebaseFirestore.instance
+        .collection("Status")
+        .doc(update())
+        .set({widget.userId: false, widget.otherUserId: otheruserStatus})
+        .then((value) {
+          print(
+            "hello ${{widget.userId: false, widget.otherUserId: otheruserStatus}} ",
+          );
+        })
+        .onError((error, stackTrace) {
+          log(error.toString());
+        });
+  }
+
   sendMessageFunction() async {
+    bool sendnoti = false;
+    /* bool sendnoti = */
+    await updateStatus()
+        .then((value) {
+          sendnoti = value;
+          log("messag e =========++++++++++++++> $value");
+        })
+        .onError((error, stackTrace) {
+          sendnoti = false;
+        });
     FirebaseFirestore.instance
         .collection("users")
         .doc(widget.otherUserId)
         .get()
         .then((value) {
-      setState(() {
-        devicetokenofothermer = value['deviceToken'];
-        otherusername = value['userName'];
-        otheruserId = value['user_id'];
-        log(value['deviceToken'] + "     samne vale ka device token");
-      });
-    });
+          setState(() {
+            devicetokenofothermer = value['deviceToken'];
+            otherusername = value['userName'];
+            otheruserId = value['user_id'];
+            log(value['deviceToken'] + "     samne vale ka device token");
+          });
+        });
     if (msgController.text.trim().isNotEmpty) {
       setState(() {
         howsubread = true;
         fbCloudStore.sendMessageToChatRoom(
-            setroom,
-            widget.userId,
-            widget.otherUserId,
-            imageUrl.isNotEmpty ? imageUrl : msgController.text.toString(),
-            imageUrl.isNotEmpty ? "image" : 'text',
-            false,
-            DateTime.now().millisecondsSinceEpoch);
+          setroom,
+          widget.userId,
+          widget.otherUserId,
+          imageUrl.isNotEmpty ? imageUrl : msgController.text.toString(),
+          imageUrl.isNotEmpty ? "image" : 'text',
+          false,
+          DateTime.now().millisecondsSinceEpoch,
+        );
         fbCloudStore.updateUserChatListField(
-            0,
-            0,
-            widget.otherUserId,
-            imageUrl.isNotEmpty ? imageUrl : msgController.text.toString(),
-            setroom,
-            widget.userId,
-            widget.name,
-            widget.userName,
-            widget.myImage,
-            widget.profileImage,
-            setroom,
-            DateTime.now().millisecondsSinceEpoch);
+          0,
+          0,
+          widget.otherUserId,
+          imageUrl.isNotEmpty ? imageUrl : msgController.text.toString(),
+          setroom,
+          widget.userId,
+          widget.name,
+          widget.userName,
+          widget.myImage,
+          widget.profileImage,
+          setroom,
+          DateTime.now().millisecondsSinceEpoch,
+        );
+        if (sendnoti == false) {
+          log("++++++++++++++++++++++++++===================+++> message ");
+          fbCloudStore.sentNotiMessage(
+            otheruserId,
+            imageUrl.isNotEmpty
+                ? "${widget.name} has sent an image"
+                : msgController.text.toString(),
+          );
+          // BlocProvider.of<NotificationCubit>(context).sendnotification(
+          //   devicetokenofothermer,
+          //   "${widget.name} has send you a message",
+          //   imageUrl.isNotEmpty
+          //       ? "${widget.name} has send an image"
+          //       : msgController.text.toString(),
+          // );
+        }
 
         msgController.clear();
         imageUrl = "";
       });
     }
   }
-
-
 
   deleteMessagefuntion(List delete) async {
     // Set the state to indicate loading and remove the message from the UI optimistically
@@ -292,71 +387,75 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-
-
-
   bool howsubread = false;
   @override
   Widget build(BuildContext context) {
-   return WillPopScope(
-     onWillPop: () async{
-       Navigator.pushAndRemoveUntil(
-           context,
-           MaterialPageRoute(
-               builder: (_) => BottomBar(
-                 currentIndex: 1,
-               )),
-               (route) => false);
-       return true;
-     },
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(71.89),
-          child: SafeArea(
-            child: Container(
-                height: 30.h,
-                width: 100.w,
-                decoration: BoxDecoration(
-                    boxShadow: kElevationToShadow[1], color: Colors.white),
-                child: Row(
-                  children: [
-                    2.w.widthBox,
-                    Icon(
-                      Icons.arrow_back,
-                      color: Colors.black,
-                      size: 20.sp,
-                    ).onTap(() {
-                      Navigator.of(context).pop();
-                      if (widget.pageNavId == 1) {
+    return WillPopScope(
+      onWillPop: () async {
+        updateMyStatustofalse();
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => BottomBar(currentIndex: 1)),
+          (route) => false,
+        );
+        return true;
+      },
+      child:
+          Scaffold(
+            backgroundColor: Colors.white,
+            appBar: PreferredSize(
+              preferredSize: const Size.fromHeight(71.89),
+              child: SafeArea(
+                child: Container(
+                  height: 30.h,
+                  width: 100.w,
+                  decoration: BoxDecoration(
+                    boxShadow: kElevationToShadow[1],
+                    color: Colors.white,
+                  ),
+                  child: Row(
+                    children: [
+                      2.w.widthBox,
+                      Icon(
+                        Icons.arrow_back,
+                        color: Colors.black,
+                        size: 20.sp,
+                      ).onTap(() {
                         Navigator.of(context).pop();
-                      }
-                      if (widget.pageNavId == 2) {
-                        // Navigator.pushAndRemoveUntil(
-                        //     context,
-                        //     MaterialPageRoute(
-                        //         builder: (_) => const Dashboard(
-                        //             currentindex: 1)),
-                        //     (route) => false);
-                      }
-                      if (widget.pageNavId == 3) {
-                        Navigator.of(context).pop();
-                      }
-                    }),
-                    2.w.widthBox,
-                    Container(
-                      height: 7.h,
-                      width: 7.h,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.black),
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: GestureDetector(
-                        onTap: (){
-                          CustomNavigator.push(context: context, screen: PhotoViewScreen(imagePath: widget.profileImage));
-                        },
-                        child: ClipRRect(
+                        if (widget.pageNavId == 1) {
+                          Navigator.of(context).pop();
+                        }
+                        if (widget.pageNavId == 2) {
+                          // Navigator.pushAndRemoveUntil(
+                          //     context,
+                          //     MaterialPageRoute(
+                          //         builder: (_) => const Dashboard(
+                          //             currentindex: 1)),
+                          //     (route) => false);
+                        }
+                        if (widget.pageNavId == 3) {
+                          Navigator.of(context).pop();
+                        }
+                      }),
+                      2.w.widthBox,
+                      Container(
+                        height: 7.h,
+                        width: 7.h,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.black),
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: GestureDetector(
+                          onTap: () {
+                            CustomNavigator.push(
+                              context: context,
+                              screen: PhotoViewScreen(
+                                imagePath: widget.profileImage,
+                              ),
+                            );
+                          },
+                          child: ClipRRect(
                             borderRadius: BorderRadius.circular(40),
                             child: widget.myImage.isEmptyOrNull
                                 ? Image.asset(
@@ -375,182 +474,192 @@ class _ChatScreenState extends State<ChatScreen> {
                                     fit: BoxFit.cover,
 
                                     // height: 250.0,
-                                  )),
-                      ),
-                    ).onTap(() {}),
-                    2.w.widthBox,
-                    AppText(
-                        fontWeight: FontWeight.w700,
-                        size: 16.sp,
-                        text: widget.userName),
-
-                    const Spacer(),
-
-                    4.w.widthBox,
-                    SizedBox(
-                        height: 20.sp,
-                        width: 20.sp,
-                        child: Image.asset(
-                          "assets/images/callimg.png",
-                          color: bgClr,
-                        )).onTap(() async {
-                      await [Permission.microphone]
-                          .request()
-                          .then((value) {
-                        log(value.toString());
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => AudioCallCall(
-                                  userId: widget.otherUserId,
-                                  profileImage:
-                                  widget.profileImage,
-                                  name: widget.userName,
-                                  myUserId: widget.userId,
-                                  userName:widget.userName,
-                                )));
-                        print("====================================>>");
-                        print(widget.name);
-                      }).onError((error, stackTrace) => null);
-                    }).pOnly(right: 2.h),
-                    deleteuser == false
-                        ? SizedBox(
-                           height: 20.sp,
-                        width: 20.sp,
-                            child: GradientWidget(
-                              colors: const [
-                                Color(0xffFD5564),
-                                Color(0xffFE3C72)
-                              ],
-                              child: Image.asset(
-                                "assets/images/videocall.png",
-                                color: AppColor.tinderclr,
-                              ),
-                            )).onTap(() async {
-                      await [
-                        Permission.microphone,
-                        Permission.camera
-                      ].request().then((value) {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => VideoCall(
-                                  userId:
-                                  widget.otherUserId,
-                                  myUserId: widget.userId,
-                                )
-                            )
-                        );
-                      }).onError((error, stackTrace) {
-                        log(error.toString());
-                      });
-                    }
-
-                    )
-                        : Icon(
-                      Icons.delete,
-                      color: bgClr,
-                      size: 25.sp,
-                      semanticLabel: "delete",
-                    ).onTap(() {
-                      deleteMessagefuntion(deleteMessageId);
-                    }),
-
-                    SpaceWidget(width: DynamicSize.width(context) * 0.01),
-                  ],
-                )),
-          ),
-        ),
-
-        body: SafeArea(
-          child: Column(
-            children: [
-              Expanded(child: messagesListview()),
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: DynamicSize.width(context) * 0.02,
-                  vertical: DynamicSize.height(context) * .01,
-                ),
-                child: Container(
-                  constraints: BoxConstraints(
-                    minHeight: 50,
-                    maxHeight: DynamicSize.height(context) * 0.15,
-                  ),
-                  width: DynamicSize.width(context),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(width: 2, color: const Color(0xffFD5564)),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          cursorColor: AppColor.tinderclr,
-                          minLines: 1,
-                          maxLines: 5,
-                          controller: msgController,
-                          decoration: InputDecoration(
-                            hintText: "Message....",
-                            contentPadding: EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 8,
-                            ),
-                            border: InputBorder.none,
+                                  ),
                           ),
                         ),
+                      ).onTap(() {}),
+                      2.w.widthBox,
+                      AppText(
+                        fontWeight: FontWeight.w700,
+                        size: 16.sp,
+                        text: widget.userName,
                       ),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.send,
-                          color: Colors.black,
-                        ),
-                        onPressed: () {
-                          if (msgController.text.trim().isNotEmpty) {
-                            sendMessageFunction();
-                          }
-                        },
-                      ),
+
+                      const Spacer(),
+
+                      4.w.widthBox,
+                      SizedBox(
+                            height: 20.sp,
+                            width: 20.sp,
+                            child: Image.asset(
+                              "assets/images/callimg.png",
+                              color: bgClr,
+                            ),
+                          )
+                          .onTap(() async {
+                            await [Permission.microphone]
+                                .request()
+                                .then((value) {
+                                  log(value.toString());
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => AudioCallCall(
+                                        userId: widget.otherUserId,
+                                        profileImage: widget.profileImage,
+                                        name: widget.userName,
+                                        myUserId: widget.userId,
+                                        userName: widget.userName,
+                                      ),
+                                    ),
+                                  );
+                                  print(
+                                    "====================================>>",
+                                  );
+                                  print(widget.name);
+                                })
+                                .onError((error, stackTrace) => null);
+                          })
+                          .pOnly(right: 2.h),
+                      deleteuser == false
+                          ? SizedBox(
+                              height: 20.sp,
+                              width: 20.sp,
+                              child: GradientWidget(
+                                colors: const [
+                                  Color(0xffFD5564),
+                                  Color(0xffFE3C72),
+                                ],
+                                child: Image.asset(
+                                  "assets/images/videocall.png",
+                                  color: AppColor.tinderclr,
+                                ),
+                              ),
+                            ).onTap(() async {
+                              await [Permission.microphone, Permission.camera]
+                                  .request()
+                                  .then((value) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => VideoCall(
+                                          userId: widget.otherUserId,
+                                          myUserId: widget.userId,
+                                        ),
+                                      ),
+                                    );
+                                  })
+                                  .onError((error, stackTrace) {
+                                    log(error.toString());
+                                  });
+                            })
+                          : Icon(
+                              Icons.delete,
+                              color: bgClr,
+                              size: 25.sp,
+                              semanticLabel: "delete",
+                            ).onTap(() {
+                              deleteMessagefuntion(deleteMessageId);
+                            }),
+
+                      SpaceWidget(width: DynamicSize.width(context) * 0.01),
                     ],
                   ),
                 ),
               ),
-            ],
-          ),
-        ),
-      ).onTap(() {
-        AppUtils.keyboardHide(context);
-      }),
+            ),
+
+            body: SafeArea(
+              child: Column(
+                children: [
+                  Expanded(child: messagesListview()),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: DynamicSize.width(context) * 0.02,
+                      vertical: DynamicSize.height(context) * .01,
+                    ),
+                    child: Container(
+                      constraints: BoxConstraints(
+                        // minHeight: 50,
+                        // maxHeight: DynamicSize.height(context) * 0.15,
+                      ),
+                      width: DynamicSize.width(context),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          width: 2,
+                          color: const Color(0xffFD5564),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              cursorColor: AppColor.tinderclr,
+                              minLines: 1,
+                              maxLines: 5,
+                              controller: msgController,
+                              decoration: InputDecoration(
+                                hintText: "Message....",
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 8,
+                                ),
+                                border: InputBorder.none,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.send, color: Colors.black),
+                            onPressed: () {
+                              if (msgController.text.trim().isNotEmpty) {
+                                sendMessageFunction();
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ).onTap(() {
+            AppUtils.keyboardHide(context);
+          }),
     );
   }
 
   Widget messagesListview() {
     return StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection("chatroom")
-            .doc(setroom)
-            .collection(setroom)
-            .orderBy('timestamp')
-            .snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-          readreciptupdate(setroom);
-          if (snapshot.hasData) {
-            return ListView(
-                shrinkWrap: true,
-                reverse: true,
-                children: addInstructionInSnapshot(snapshot.data!.docs)
-                    .map(_returnChatWidget)
-                    .toList());
-          }
-          return const SizedBox();
-        });
+      stream: FirebaseFirestore.instance
+          .collection("chatroom")
+          .doc(setroom)
+          .collection(setroom)
+          .orderBy('timestamp')
+          .snapshots(),
+      builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+        readreciptupdate(setroom);
+        if (snapshot.hasData) {
+          return ListView(
+            shrinkWrap: true,
+            reverse: true,
+            children: addInstructionInSnapshot(
+              snapshot.data!.docs,
+            ).map(_returnChatWidget).toList(),
+          );
+        }
+        return const SizedBox();
+      },
+    );
   }
 
   late Widget _returnWidget;
   Widget _returnChatWidget(dynamic data) {
     if (data is QueryDocumentSnapshot) {
       String message = data['content'] ?? '';
-      String time = returnTimeStamp(data['timestamp']) ?? '';
+      String time = returnTimeStamp(data['timestamp']);
       String type = data['type'] ?? 'text';
       String messageId = data.id;
       bool readUnread = data['isRead'] ?? false;
@@ -558,20 +667,19 @@ class _ChatScreenState extends State<ChatScreen> {
       _returnWidget = data['idFrom'] == widget.otherUserId
           ? peerUserListTile(context, message, time, type)
           : myMessage(
-        context,
-        message,
-        time,
-        type,
-        data['timestamp'].toString(),
-        readUnread,
-        messageId,
-      );
+              context,
+              message,
+              time,
+              type,
+              data['timestamp'].toString(),
+              readUnread,
+              messageId,
+            );
     } else if (data is String) {
       _returnWidget = stringListTile(data);
     }
     return _returnWidget;
   }
-
 
   Widget stringListTile(String data) {
     Widget _returnWidget;
@@ -581,7 +689,9 @@ class _ChatScreenState extends State<ChatScreen> {
       child: Center(
         child: Container(
           decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16), color: Colors.grey[300]),
+            borderRadius: BorderRadius.circular(16),
+            color: Colors.grey[300],
+          ),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
             child: Text(
@@ -605,7 +715,11 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget peerUserListTile(
-      BuildContext context, String message, String time, String type) {
+    BuildContext context,
+    String message,
+    String time,
+    String type,
+  ) {
     final size = MediaQuery.of(context).size;
     return Padding(
       padding: const EdgeInsets.only(top: 4.0),
@@ -628,43 +742,43 @@ class _ChatScreenState extends State<ChatScreen> {
                       children: <Widget>[
                         Padding(
                           padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
-                        child: type == 'text'
-                            ? Container(
-                                constraints: BoxConstraints(
+                          child: type == 'text'
+                              ? Container(
+                                  constraints: BoxConstraints(
                                     maxWidth: size.width - 150,
                                     minHeight: 40,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.transparent,
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(20),
-                                    topRight: Radius.circular(20),
-                                    bottomRight: Radius.circular(0),
-                                    bottomLeft: Radius.circular(20),
                                   ),
-                                ),
-                                child: Padding(
-                                  padding: EdgeInsets.all(
-                                      type == 'text' ? 10.0 : 0),
-                                  child: AppPara(
+                                  decoration: BoxDecoration(
+                                    color: Colors.transparent,
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(20),
+                                      topRight: Radius.circular(20),
+                                      bottomRight: Radius.circular(0),
+                                      bottomLeft: Radius.circular(20),
+                                    ),
+                                  ),
+                                  child: Padding(
+                                    padding: EdgeInsets.all(
+                                      type == 'text' ? 10.0 : 0,
+                                    ),
+                                    child: AppPara(
                                       color: AppColor.black,
                                       fontWeight: FontWeight.w500,
                                       size: 16.sp,
                                       text: message,
                                       maxLines: 10,
                                       overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
-                                ),
-                              )
+                                )
                               : GestureDetector(
                                   onTap: () {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                          builder: (context) => PhotoViewScreen(
-
-                                                imagePath: message,
-                                              )),
+                                        builder: (context) =>
+                                            PhotoViewScreen(imagePath: message),
+                                      ),
                                     );
                                   },
                                   child: Image.network(
@@ -681,7 +795,10 @@ class _ChatScreenState extends State<ChatScreen> {
                       padding: const EdgeInsets.only(bottom: 14.0, left: 4),
                       child: Text(
                         time,
-                        style: const TextStyle(fontSize: 12 ,color: Colors.black),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black,
+                        ),
                       ),
                     ),
                   ],
@@ -789,8 +906,15 @@ class _ChatScreenState extends State<ChatScreen> {
   // }
   List deleteMessageId = [];
 
-  Widget myMessage(BuildContext context, String message, String time, String type,
-      String timestamp, bool readUnread, String messageId) {
+  Widget myMessage(
+    BuildContext context,
+    String message,
+    String time,
+    String type,
+    String timestamp,
+    bool readUnread,
+    String messageId,
+  ) {
     final size = MediaQuery.of(context).size;
 
     return Padding(
@@ -814,14 +938,26 @@ class _ChatScreenState extends State<ChatScreen> {
                         builder: (context) => AlertDialog(
                           title: Text("Delete Message"),
                           content: Text(
-                              "Are you sure you want to delete this message?",style: TextStyle(color: AppColor.black,fontSize: 12,fontWeight: FontWeight.w200),),
+                            "Are you sure you want to delete this message?",
+                            style: TextStyle(
+                              color: AppColor.black,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w200,
+                            ),
+                          ),
                           actions: [
                             TextButton(
-                              child: Text("Cancel",style: TextStyle(color: AppColor.black),),
+                              child: Text(
+                                "Cancel",
+                                style: TextStyle(color: AppColor.black),
+                              ),
                               onPressed: () => Navigator.of(context).pop(),
                             ),
                             TextButton(
-                              child: Text("Delete",style: TextStyle(color: AppColor.activeiconclr),),
+                              child: Text(
+                                "Delete",
+                                style: TextStyle(color: AppColor.activeiconclr),
+                              ),
                               onPressed: () {
                                 Navigator.of(context).pop();
                                 deleteMessagefuntion([messageId]);
@@ -833,69 +969,71 @@ class _ChatScreenState extends State<ChatScreen> {
                     },
                     child: type == 'text'
                         ? Container(
-                      constraints: BoxConstraints(
-                          maxWidth: size.width - size.width * 0.2,
-                          minHeight: 40,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                            colors: [Color(0xffFD5564), Color(0xffFE3C72)]),
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(15),
-                          topRight: Radius.circular(15),
-                          bottomRight: Radius.circular(00),
-                          bottomLeft: Radius.circular(15),
-                        ),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.all(type == 'text' ? 10.0 : 0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            AppPara(
-                              color: AppColor.white,
-                              fontWeight: FontWeight.w400,
-                              size: 16.sp,
-                              text: message,
-                              maxLines: 10,
-                              overflow: TextOverflow.ellipsis,
+                            constraints: BoxConstraints(
+                              maxWidth: size.width - size.width * 0.2,
+                              minHeight: 40,
                             ),
-                            readUnread == false
-                                ? Image.asset(
-                              "assets/images/un_read_image.png",
-                              height: 20,
-                              width: 20,
-                              color: AppColor.white,
-                            )
-                                : Image.asset(
-                              "assets/images/readAll.png",
-                              height: 20,
-                              width: 20,
-                              color: AppColor.white,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xffFD5564), Color(0xffFE3C72)],
+                              ),
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(15),
+                                topRight: Radius.circular(15),
+                                bottomRight: Radius.circular(00),
+                                bottomLeft: Radius.circular(15),
+                              ),
                             ),
-                          ],
-                        ),
-                      ),
-                    )
+                            child: Padding(
+                              padding: EdgeInsets.all(
+                                type == 'text' ? 10.0 : 0,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  AppPara(
+                                    color: AppColor.white,
+                                    fontWeight: FontWeight.w400,
+                                    size: 16.sp,
+                                    text: message,
+                                    maxLines: 10,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  readUnread == false
+                                      ? Image.asset(
+                                          "assets/images/un_read_image.png",
+                                          height: 20,
+                                          width: 20,
+                                          color: AppColor.white,
+                                        )
+                                      : Image.asset(
+                                          "assets/images/readAll.png",
+                                          height: 20,
+                                          width: 20,
+                                          color: AppColor.white,
+                                        ),
+                                ],
+                              ),
+                            ),
+                          )
                         : GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PhotoViewScreen(
-                              imagePath: message,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      PhotoViewScreen(imagePath: message),
+                                ),
+                              );
+                            },
+                            child: Image.network(
+                              message,
+                              height: 200,
+                              width: 200,
+                              fit: BoxFit.cover,
                             ),
                           ),
-                        );
-                      },
-                      child: Image.network(
-                        message,
-                        height: 200,
-                        width: 200,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
                   ),
                 ],
               ),
@@ -913,8 +1051,6 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
   }
-
-
 
   String readTimestamp(int timestamp) {
     var now = DateTime.now();
@@ -966,5 +1102,4 @@ class _ChatScreenState extends State<ChatScreen> {
 
     log(imageUrl.toString());
   }
-
 }

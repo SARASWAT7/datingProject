@@ -21,7 +21,8 @@ class CorettaChatRepository {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   Future<Map<String, dynamic>> registerUser(
-      FirebaseUserCreation request) async {
+    FirebaseUserCreation request,
+  ) async {
     try {
       await FirebaseFirestore.instance
           .collection('users')
@@ -43,15 +44,19 @@ class CorettaChatRepository {
     return user;
   }
 
-  Future<void> updateMyChatListValues(String userId, String chatID,
-      String otherUserId, String typeUpdate) async {
+  Future<void> updateMyChatListValues(
+    String userId,
+    String chatID,
+    String otherUserId,
+    String typeUpdate,
+  ) async {
     log('updateMyChatListValues');
     log(userId);
     log(otherUserId);
 
     var updateData = {
       'badgeCount': 0,
-      'chatRoomId': typeUpdate.isEmpty ? otherUserId : "no"
+      'chatRoomId': typeUpdate.isEmpty ? otherUserId : "no",
     };
 
     log("--=-=>>> userId $userId");
@@ -87,7 +92,7 @@ class CorettaChatRepository {
       log('Error: User ID is empty for getChatContacts');
       return Stream.value([]);
     }
-    
+
     return FirebaseFirestore.instance
         .collection('users')
         .doc(userId)
@@ -95,25 +100,32 @@ class CorettaChatRepository {
         .orderBy('timestamp', descending: true)
         .snapshots()
         .asyncMap((event) async {
-      List<ChatInboxModel> contacts = [];
-      for (var document in event.docs) {
-        log(document.data().toString());
-        contacts.add(
-          ChatInboxModel.fromMap(document.data()),
-        );
-      }
-      return contacts;
-    });
+          List<ChatInboxModel> contacts = [];
+          for (var document in event.docs) {
+            log(document.data().toString());
+            contacts.add(ChatInboxModel.fromMap(document.data()));
+          }
+          return contacts;
+        });
   }
 
-  Future sendMessageToChatRoom(chatID, userId, otherUserId, content,
-      messageType, isread, int timeStamp) async {
+  Future sendMessageToChatRoom(
+    chatID,
+    userId,
+    otherUserId,
+    content,
+    messageType,
+    isread,
+    int timeStamp,
+  ) async {
     // Validate all parameters before Firebase operation
     if (chatID.isEmpty || userId.isEmpty || otherUserId.isEmpty) {
-      log('Error: Empty parameters for sendMessageToChatRoom - chatID: $chatID, userId: $userId, otherUserId: $otherUserId');
+      log(
+        'Error: Empty parameters for sendMessageToChatRoom - chatID: $chatID, userId: $userId, otherUserId: $otherUserId',
+      );
       return;
     }
-    
+
     try {
       await FirebaseFirestore.instance
           .collection('chatroom')
@@ -121,31 +133,32 @@ class CorettaChatRepository {
           .collection(chatID)
           .doc(timeStamp.toString())
           .set({
-        'idFrom': userId,
-        'idTo': otherUserId,
-        'timestamp': timeStamp,
-        'content': content,
-        'type': messageType,
-        'isRead': isread
-      });
+            'idFrom': userId,
+            'idTo': otherUserId,
+            'timestamp': timeStamp,
+            'content': content,
+            'type': messageType,
+            'isRead': isread,
+          });
     } catch (e) {
       log('Error sending message to chat room: $e');
     }
   }
 
   Future updateUserChatListField(
-      int mybadgecount,
-      int otherbadgecount,
-      String otherUserId,
-      String lastMessage,
-      chatID,
-      userId,
-      String myName,
-      String otherusername,
-      String myImg,
-      String otherImg,
-      String chatroomid,
-      int timeStamp) async {
+    int mybadgecount,
+    int otherbadgecount,
+    String otherUserId,
+    String lastMessage,
+    chatID,
+    userId,
+    String myName,
+    String otherusername,
+    String myImg,
+    String otherImg,
+    String chatroomid,
+    int timeStamp,
+  ) async {
     var other = {
       'chatID': chatID,
       'inboxId': chatroomid,
@@ -156,7 +169,7 @@ class CorettaChatRepository {
       'senderImg': myImg,
       'senderId': userId,
       'reciverId': otherUserId,
-      'chatRoomId': "no"
+      'chatRoomId': "no",
     };
 
     var myinbox = {
@@ -169,7 +182,7 @@ class CorettaChatRepository {
       'senderImg': otherImg,
       'senderId': otherUserId,
       'reciverId': userId,
-      'chatRoomId': "no"
+      'chatRoomId': "no",
     };
 
     await FirebaseFirestore.instance
@@ -189,8 +202,13 @@ class CorettaChatRepository {
 
   //////sent notification///////////
   //sent notification
-  Future<sentNotification> sentNoti(String deviceToken, String userID,
-      String channelName, String token1, String callType) async {
+  Future<sentNotification> sentNoti(
+    String deviceToken,
+    String userID,
+    String channelName,
+    String token1,
+    String callType,
+  ) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     var token = prefs.getString('token');
@@ -199,16 +217,47 @@ class CorettaChatRepository {
     dio.options.headers['Authorization'] = 'Bearer $token';
     dio.interceptors.add(PrettyDioLogger());
     try {
-      final response = await dio.post("user/send-token", data: {
-        "deviceToken": deviceToken,
-        "receiver_id": userID,
-        "channelName": channelName,
-        "tokenData": token1,
-        "callType": callType
-      });
-      log("${response.data} $deviceToken ++++++++++++++++++++++====================>");
+      final response = await dio.post(
+        "user/send-token",
+        data: {
+          "deviceToken": deviceToken,
+          "receiver_id": userID,
+          "channelName": channelName,
+          "tokenData": token1,
+          "callType": callType,
+        },
+      );
+      log(
+        "${response.data} $deviceToken ++++++++++++++++++++++====================>",
+      );
       return sentNotification.fromJson(response.data);
     } on DioError catch (e) {
+      print("${e.response?.data}  eeeee===============>");
+      throw e.response?.data['message'].toString() ?? "sdsd";
+    } catch (e) {
+      throw e.toString();
+    }
+  }
+
+  Future<sentNotification> sentNotiMessage(
+    String userID,
+    String message,
+  ) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    var token = prefs.getString('token');
+
+    dio.options.headers['content-Type'] = 'application/json';
+    dio.options.headers['Authorization'] = 'Bearer $token';
+    dio.interceptors.add(PrettyDioLogger());
+    try {
+      final response = await dio.post(
+        "user/send-notification",
+        data: {"receiver_id": userID, "messageString": message, "data": ""},
+      );
+
+      return sentNotification.fromJson(response.data);
+    } on DioException catch (e) {
       print("${e.response?.data}  eeeee===============>");
       throw e.response?.data['message'].toString() ?? "sdsd";
     } catch (e) {
