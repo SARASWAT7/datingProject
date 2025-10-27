@@ -21,13 +21,13 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace "com.dating.corretta"
-    compileSdkVersion 35
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.dating.corretta"
         minSdkVersion 23   // required by google_api_headers
-        targetSdkVersion 35
-        versionCode 62
+        targetSdkVersion 36
+        versionCode 63
         versionName "2.0.0"
         multiDexEnabled true
     }

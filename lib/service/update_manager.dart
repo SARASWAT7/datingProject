@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:demoproject/service/app_update_service.dart';
+// import 'package:demoproject/service/in_app_update_service.dart';
 import 'package:demoproject/ui/update/update_screen.dart';
 import 'package:demoproject/ui/update/update_dialog.dart';
+// import 'package:demoproject/ui/update/native_update_screen.dart';
 
 class UpdateManager {
   static bool _isCheckingUpdate = false;
@@ -125,4 +127,39 @@ class UpdateManager {
   static Future<void> resetUpdateDismissal() async {
     await AppUpdateService.resetUpdateDismissal();
   }
+
+  /// Check for native Android in-app updates
+  // Native update methods temporarily disabled due to package compatibility
+  // static Future<void> checkForNativeUpdates(BuildContext context) async {
+  //   try {
+  //     // Check for native Android updates first
+  //     final hasNativeUpdate = await InAppUpdateService.checkForUpdate();
+  //     
+  //     if (hasNativeUpdate) {
+  //       // Show native update screen
+  //       Navigator.push(
+  //         context,
+  //         MaterialPageRoute(
+  //           builder: (context) => NativeUpdateScreen(),
+  //         ),
+  //       );
+  //     } else {
+  //       // Fallback to custom update system
+  //       await checkForUpdates(context);
+  //     }
+  //   } catch (e) {
+  //     // Fallback to custom update system if native update fails
+  //     await checkForUpdates(context);
+  //   }
+  // }
+
+  // /// Show native update screen directly
+  // static void showNativeUpdateScreen(BuildContext context) {
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(
+  //       builder: (context) => NativeUpdateScreen(),
+  //     ),
+  //   );
+  // }
 }

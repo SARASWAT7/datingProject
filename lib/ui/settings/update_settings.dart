@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
 import 'package:demoproject/service/app_update_service.dart';
 import 'package:demoproject/service/update_manager.dart';
+// import 'package:demoproject/service/in_app_update_service.dart';
 import 'package:demoproject/component/commonfiles/appcolor.dart';
 import 'package:demoproject/component/reuseable_widgets/apptext.dart';
 import 'package:flutter/foundation.dart';
@@ -133,6 +134,25 @@ class _UpdateSettingsState extends State<UpdateSettings> {
                 child: Text(isLoading ? 'Checking...' : 'Check for Updates'),
               ),
             ),
+
+            SizedBox(height: 2.h),
+
+            // Native Android Update Button - Temporarily disabled due to package compatibility
+            // Container(
+            //   width: double.infinity,
+            //   height: 6.h,
+            //   child: ElevatedButton(
+            //     onPressed: _checkForNativeUpdates,
+            //     style: ElevatedButton.styleFrom(
+            //       backgroundColor: Colors.blue,
+            //       foregroundColor: Colors.white,
+            //       shape: RoundedRectangleBorder(
+            //         borderRadius: BorderRadius.circular(30),
+            //       ),
+            //     ),
+            //     child: Text(isLoading ? 'Checking...' : 'Native Android Update'),
+            //   ),
+            // ),
             
             SizedBox(height: 2.h),
             
@@ -248,6 +268,23 @@ class _UpdateSettingsState extends State<UpdateSettings> {
       });
     }
   }
+
+  // Native update method temporarily disabled due to package compatibility
+  // Future<void> _checkForNativeUpdates() async {
+  //   setState(() {
+  //     isLoading = true;
+  //   });
+  //   
+  //   try {
+  //     await UpdateManager.checkForNativeUpdates(context);
+  //   } catch (e) {
+  //     _showErrorDialog('Failed to check for native updates. Please try again.');
+  //   } finally {
+  //     setState(() {
+  //       isLoading = false;
+  //     });
+  //   }
+  // }
 
   Future<void> _openAppStore() async {
     try {

@@ -42,6 +42,7 @@ import 'package:demoproject/component/apihelper/crash_handler.dart';
 import 'package:demoproject/component/apihelper/startup_optimizer.dart';
 import 'package:demoproject/component/apihelper/firebase_error_handler.dart';
 import 'package:demoproject/service/update_manager.dart';
+import 'package:demoproject/component/apihelper/smart_cache_manager.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -60,13 +61,21 @@ void _showTestButton() {
           children: [
             Text('Test the update system:'),
             SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                UpdateManager.checkForUpdates(context);
-              },
-              child: Text('Test Update Check'),
-            ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        UpdateManager.checkForUpdates(context);
+                      },
+                      child: Text('Test Custom Update'),
+                    ),
+                    SizedBox(height: 10),
+        // ElevatedButton(
+        //   onPressed: () {
+        //     Navigator.pop(context);
+        //     UpdateManager.showNativeUpdateScreen(context);
+        //   },
+        //   child: Text('Test Native Update'),
+        // ),
             SizedBox(height: 10),
             ElevatedButton(
               onPressed: () {
@@ -159,16 +168,36 @@ void main() async {
               }
             });
 
-            // Add test button for debugging (only in debug mode)
-            if (kDebugMode) {
-              Future.delayed(Duration(seconds: 5), () {
-                try {
-                  _showTestButton();
-                } catch (e) {
-                  print('Test button error: $e');
-                }
-              });
+        // Add test button for debugging (only in debug mode)
+        if (kDebugMode) {
+          Future.delayed(Duration(seconds: 5), () {
+            try {
+              _showTestButton();
+            } catch (e) {
+              print('Test button error: $e');
             }
+          });
+        }
+
+        // 🔄 NATIVE UPDATE: Check for native Android updates
+        // Native update check temporarily disabled due to package compatibility
+        // Future.delayed(Duration(seconds: 4), () {
+        //   try {
+        //     UpdateManager.checkForNativeUpdates(navigatorKey.currentState!.context);
+        //   } catch (e) {
+        //     print('Native update check error: $e');
+        //   }
+        // });
+
+        // 🧹 CACHE MANAGEMENT: Clear old cache on app startup
+        Future.delayed(Duration(seconds: 2), () {
+          try {
+            SmartCacheManager.clearOldCache();
+            print('🧹 Cleared old cache on app startup');
+          } catch (e) {
+            print('❌ Error clearing cache on startup: $e');
+          }
+        });
 
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,

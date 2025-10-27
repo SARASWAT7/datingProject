@@ -8,6 +8,7 @@ import 'package:demoproject/component/apihelper/performance_optimizer.dart';
 import 'package:demoproject/component/apihelper/advanced_performance_optimizer.dart';
 import 'package:demoproject/component/apihelper/fast_data_service.dart';
 import 'package:demoproject/component/apihelper/crash_handler.dart';
+import 'package:demoproject/component/apihelper/smart_cache_manager.dart';
 import 'package:demoproject/main.dart';
 import 'package:demoproject/ui/dashboard/chat/model/datacreationmodel.dart';
 import 'package:demoproject/ui/dashboard/chat/repository/service.dart';
@@ -21,7 +22,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../../subscrption/design/subscriptionpopup.dart';
 import '../../../../subscrption/subscription/cubit.dart';
 
 
@@ -30,7 +30,7 @@ class HomePageCubit extends Cubit<HomePageState> {
   HomeRepository repo = HomeRepository();
   FastDataService fastDataService = FastDataService();
   final int pageLimit = 10; // Reduced from 20 to 10 for faster loading
-Future<String> gettoken() async {
+  Future<String> gettoken() async {
   try {
     String? token = await FCMTokenHelper.getTokenWithRetry();
     return token ?? "token not found";
@@ -39,6 +39,55 @@ Future<String> gettoken() async {
     return "token not found";
   }
 }
+
+  /// Clear image cache to prevent old user images from showing
+  Future<void> clearImageCache() async {
+    try {
+      await SmartCacheManager.clearAllCache();
+      log("🧹 Image cache cleared successfully");
+    } catch (e) {
+      log("❌ Error clearing image cache: $e");
+    }
+  }
+
+  /// Clear cache for specific user images
+  Future<void> clearUserImageCache(List<String> imageUrls) async {
+    try {
+      await SmartCacheManager.clearUserImages(imageUrls);
+    } catch (e) {
+      log("❌ Error clearing user image cache: $e");
+    }
+  }
+
+  /// Smart cache management - clear old data when loading new users
+  Future<void> manageCacheForNewUsers(HomeResponse response) async {
+    try {
+      // Get current user IDs and their images
+      final currentUserIds = response.result?.users?.map((user) => user.id).whereType<String>().toList() ?? [];
+      final newUserIds = response.result?.users?.map((user) => user.id).whereType<String>().toList() ?? [];
+      
+      // Create user image map for smart cache management
+      final userImageMap = <String, List<String>>{};
+      if (state.response?.result?.users != null) {
+        for (var user in state.response!.result!.users!) {
+          if (user.id != null && user.media != null) {
+            userImageMap[user.id!] = user.media!.whereType<String>().toList();
+          }
+        }
+      }
+      
+      // Use smart cache manager
+      await SmartCacheManager.manageCacheForNewUsers(
+        currentUserIds: currentUserIds.whereType<String>().toList(),
+        newUserIds: newUserIds.whereType<String>().toList(),
+        userImageMap: userImageMap,
+      );
+
+      log("🧹 Smart cache management completed for new users");
+    } catch (e) {
+      log("❌ Error managing cache for new users: $e");
+    }
+  }
   Future<void> updateUserDatatoFirebase() async {
     try {
 String token = await gettoken();
@@ -106,6 +155,9 @@ String token = await gettoken();
 
   void homeApi(BuildContext context) async {
     emit(state.copyWith(status: ApiStates.loading));
+    
+    // 🧹 CACHE MANAGEMENT: Clear old cache on fresh load
+    await SmartCacheManager.clearOldCache();
     
     // Reset pagination
     emit(state.copyWith(
@@ -193,6 +245,9 @@ String token = await gettoken();
             NormalMessage().normalerrorstate(context, "No users found. Please try again.");
             return;
           }
+
+          // 🧹 CACHE MANAGEMENT: Clear old user images to prevent showing wrong users
+          await manageCacheForNewUsers(response);
           
           // Run background operations in parallel (don't block UI)
           Future.wait([
@@ -362,6 +417,9 @@ String token = await gettoken();
       log("📡 Loading more users - page $nextPage");
       final response = await repo.homePageApi(page: nextPage, limit: pageLimit);
       
+      // 🧹 CACHE MANAGEMENT: Clear old user images when loading new users
+      await manageCacheForNewUsers(response);
+      
       final newUsers = response.result?.users ?? [];
       final currentUsers = state.response?.result?.users ?? [];
       
@@ -402,15 +460,9 @@ String token = await gettoken();
       log("🔄 Updated current index from ${state.currentIndex} to $updatedCurrentIndex");
       log("📊 New total users: ${combinedUsers.length}, Has more data: $hasMoreData");
       
-      // If we still have more data and loaded users, try to preload the next page
-      if (hasMoreData && newUsers.isNotEmpty) {
-        Future.delayed(Duration(seconds: 1), () {
-          if (state.hasMoreData && !state.isLoadingMore) {
-            log("🔄 Auto-triggering next page load...");
-            loadMoreUsers();
-          }
-        });
-      }
+      // REMOVED: Auto-triggering next page load to prevent infinite API calls
+      // This was causing continuous API hits on every 9th user
+      // Users will be loaded on-demand when needed instead
     } catch (e) {
       log("❌ Error loading more users: $e");
       log("❌ Error type: ${e.runtimeType}");
@@ -432,17 +484,16 @@ String token = await gettoken();
     }
   }
 
-  // Check if we need to load more users (load more aggressively to prevent "no users found")
+  // OPTIMIZED: Check if we need to load more users (less aggressive to prevent continuous API calls)
   void checkAndLoadMoreUsers() {
     final currentIndex = state.currentIndex;
     final totalUsers = state.response?.result?.users?.length ?? 0;
     
     log("🔍 Checking pagination - Current index: $currentIndex, Total users: $totalUsers, Has more data: ${state.hasMoreData}, Is loading: ${state.isLoadingMore}");
     
-    // Load more users when reaching the 5th user (index 4) for much faster loading
-    // OR when we're at the last user and have more data available
-    // OR when we're close to the end (within 2 users of the end)
-    if ((currentIndex >= 4 || currentIndex >= totalUsers - 2) && 
+    // OPTIMIZED: Only load more when we're actually near the end (within 1 user of the end)
+    // This prevents continuous API calls on every 9th user
+    if (currentIndex >= totalUsers - 1 && 
         state.hasMoreData && 
         !state.isLoadingMore) {
       log("🔄 Triggering load more users - Current index: $currentIndex, Total: $totalUsers");
@@ -539,12 +590,21 @@ String token = await gettoken();
       currentIndex: nextIndex,
     ));
 
+    // 🧹 CACHE MANAGEMENT: Clear current user's images after like/dislike
+    if (state.currentIndex < currentUsers.length) {
+      final currentUser = currentUsers[state.currentIndex];
+      if (currentUser.media != null && currentUser.media!.isNotEmpty) {
+        await clearUserImageCache(currentUser.media!);
+        log("🧹 Cleared cache for liked/disliked user: ${currentUser.firstName}");
+      }
+    }
+
     // Preload next user's images immediately
     if (nextIndex >= 0) {
       _preloadNextUserImages(nextIndex);
     }
 
-    // If we're at the last user and have more data, trigger loading immediately
+    // OPTIMIZED: Only trigger one loading method to prevent multiple API calls
     if (isAtLastUser && hasMoreData && !isLoadingMore) {
       log("🔄 At last user, triggering immediate load more...");
       handleLastUserAction();
@@ -556,8 +616,8 @@ String token = await gettoken();
       checkAndLoadMoreUsers();
     }
 
-    // Always check for proactive loading to prevent "no users found"
-    proactiveLoadMoreUsers();
+    // REMOVED: proactiveLoadMoreUsers() call to prevent duplicate API calls
+    // The above logic already handles proactive loading when needed
 
     // Run API call in background without blocking UI
     _performLikeDislikeInBackground(context, userId, type, token, likeuserName, nextIndex);
@@ -644,15 +704,16 @@ String token = await gettoken();
     }
   }
 
-  /// Proactively load more users when user is approaching the end
+  /// OPTIMIZED: Proactively load more users when user is approaching the end (less aggressive)
   void proactiveLoadMoreUsers() {
     final currentIndex = state.currentIndex;
     final totalUsers = state.response?.result?.users?.length ?? 0;
     
     log("🔮 Proactive loading check - Current index: $currentIndex, Total users: $totalUsers");
     
-    // Load more when user is at 6th user (index 5) to ensure smooth experience
-    if (currentIndex >= 5 && state.hasMoreData && !state.isLoadingMore) {
+    // OPTIMIZED: Only load more when user is at the last user to prevent continuous API calls
+    // This prevents the issue where API was called on every 9th user
+    if (currentIndex >= totalUsers - 1 && state.hasMoreData && !state.isLoadingMore) {
       log("🔮 Proactively loading more users to prevent 'no users found'...");
       loadMoreUsers();
     }
