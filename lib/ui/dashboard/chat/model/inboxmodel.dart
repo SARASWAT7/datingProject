@@ -1,6 +1,6 @@
 // ignore_for_file: file_names, non_constant_identifier_names
 
-import 'dart:convert';
+// import 'dart:convert';
 
 class ChatInboxModel {
   String? senderId;
@@ -11,13 +11,14 @@ class ChatInboxModel {
   String? sendername;
   String? chatID;
   int? timestamp;
-  ChatInboxModel(
-      {this.senderId,
-      this.recevierId,
-      this.lastMesage,
-      this.badgeCount,
-      this.senderImg,
-      this.chatID});
+  ChatInboxModel({
+    this.senderId,
+    this.recevierId,
+    this.lastMesage,
+    this.badgeCount,
+    this.senderImg,
+    this.chatID,
+  });
 
   ChatInboxModel.fromMap(Map<String, dynamic> map) {
     badgeCount = map["badgeCount"];

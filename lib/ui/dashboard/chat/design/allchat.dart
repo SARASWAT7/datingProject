@@ -110,8 +110,6 @@
 //   }
 // }
 
-
-
 import 'dart:developer';
 import 'dart:ui';
 
@@ -125,12 +123,8 @@ import 'package:demoproject/ui/dashboard/chat/model/inboxmodel.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:velocity_x/velocity_x.dart';
-
-import '../../../../component/reuseable_widgets/appBar.dart';
 import '../../../../component/reuseable_widgets/bottomTabBar.dart';
-import '../../../subscrption/design/subscriptionpopup.dart';
 
 class AllChatScreen extends StatefulWidget {
   const AllChatScreen({super.key});
@@ -150,7 +144,7 @@ class _AllChatScreenState extends State<AllChatScreen> {
       shouldShowChats = true;
       isBlurred = false; // Remove the blur for all users
     });
-    
+
     // Ensure chat token is initialized
     try {
       context.read<ChatCubit>().getUserToken();
@@ -179,12 +173,8 @@ class _AllChatScreenState extends State<AllChatScreen> {
           onWillPop: () async {
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(
-                builder: (_) => BottomBar(
-                  currentIndex: 2,
-                ),
-              ),
-                  (route) => false,
+              MaterialPageRoute(builder: (_) => BottomBar(currentIndex: 2)),
+              (route) => false,
             );
             return true;
           },
@@ -203,45 +193,54 @@ class _AllChatScreenState extends State<AllChatScreen> {
                   height: DynamicSize.height(context) * .75,
                   child: shouldShowChats
                       ? StreamBuilder<List<ChatInboxModel>>(
-                    stream: context.read<ChatCubit>().chatContacts(state.userId),
-                    builder: (context, snap) {
-                      if (snap.connectionState == ConnectionState.active) {
-                        if ((snap.data?.isNotEmpty ?? false)) {
-                          return ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: snap.data?.length ?? 0,
-                            itemBuilder: (context, i) {
-                              return InboxContainer(
-                                otherUserId: snap.data?[i].senderId ?? "",
-                                userId: state.userId.toString(),
-                                profileImage: snap.data?[i].senderImg ?? "",
-                                userName: snap.data?[i].sendername ?? "",
-                                myImage: state.profileImage,
-                                name: state.name,
-                                returnTimeStamp: context
-                                    .read<ChatCubit>()
-                                    .returnTimeStamp(snap.data?[i].timestamp),
-                                lastMesage: snap.data?[i].lastMesage ?? "",
-                                badgeCount: snap.data?[i].badgeCount.toString() ?? "",
-                              );
-                            },
-                          );
-                        } else {
-                          return Center(
-                            child: Text(
-                              'No Chats Found',
-                              style: TextStyle(
-                                fontSize: 24,
-                                color: Colors.black,
-                              ),
-                            ),
-                          );
-                        }
-                      } else {
-                        return AppLoader();
-                      }
-                    },
-                  ).pOnly(top: DynamicSize.height(context) * .01)
+                          stream: context.read<ChatCubit>().chatContacts(
+                            state.userId,
+                          ),
+                          builder: (context, snap) {
+                            if (snap.connectionState ==
+                                ConnectionState.active) {
+                              if ((snap.data?.isNotEmpty ?? false)) {
+                                return ListView.builder(
+                                  shrinkWrap: true,
+                                  itemCount: snap.data?.length ?? 0,
+                                  itemBuilder: (context, i) {
+                                    return InboxContainer(
+                                      otherUserId: snap.data?[i].senderId ?? "",
+                                      userId: state.userId.toString(),
+                                      profileImage:
+                                          snap.data?[i].senderImg ?? "",
+                                      userName: snap.data?[i].sendername ?? "",
+                                      myImage: state.profileImage,
+                                      name: state.name,
+                                      returnTimeStamp: context
+                                          .read<ChatCubit>()
+                                          .returnTimeStamp(
+                                            snap.data?[i].timestamp,
+                                          ),
+                                      lastMesage:
+                                          snap.data?[i].lastMesage ?? "",
+                                      badgeCount:
+                                          snap.data?[i].badgeCount.toString() ??
+                                          "",
+                                    );
+                                  },
+                                );
+                              } else {
+                                return Center(
+                                  child: Text(
+                                    'No Chats Found',
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                );
+                              }
+                            } else {
+                              return AppLoader();
+                            }
+                          },
+                        ).pOnly(top: DynamicSize.height(context) * .01)
                       : const SizedBox(),
                 ),
               ),
@@ -251,9 +250,7 @@ class _AllChatScreenState extends State<AllChatScreen> {
                 Positioned.fill(
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-                    child: Container(
-                      color: Colors.black.withOpacity(0.5),
-                    ),
+                    child: Container(color: Colors.black.withOpacity(0.5)),
                   ),
                 ),
             ],

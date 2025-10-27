@@ -329,7 +329,7 @@ class _ChatScreenState extends State<ChatScreen> {
         if (sendnoti == false) {
           log("++++++++++++++++++++++++++===================+++> message ");
           fbCloudStore.sentNotiMessage(
-            otheruserId,
+            widget.otherUserId,
             imageUrl.isNotEmpty
                 ? "${widget.name} has sent an image"
                 : msgController.text.toString(),

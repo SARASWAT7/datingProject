@@ -243,6 +243,9 @@ class CorettaChatRepository {
     String userID,
     String message,
   ) async {
+    log(
+      "================++++++++++++++++>>>>>>>>>>>>>>>>>>>>>> userID $userID message $message ${{"receiver_id": userID, "messageString": message, "data": ""}}",
+    );
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     var token = prefs.getString('token');
@@ -250,6 +253,9 @@ class CorettaChatRepository {
     dio.options.headers['content-Type'] = 'application/json';
     dio.options.headers['Authorization'] = 'Bearer $token';
     dio.interceptors.add(PrettyDioLogger());
+    log(
+      "================++++++++++++++++>>>>>>>>>>>>>>>>>>>>>> userID $userID message $message ${{"receiver_id": userID, "messageString": message, "data": ""}}",
+    );
     try {
       final response = await dio.post(
         "user/send-notification",
