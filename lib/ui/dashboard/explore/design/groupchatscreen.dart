@@ -5,11 +5,16 @@ import 'package:demoproject/component/commonfiles/appcolor.dart';
 import 'package:demoproject/component/commonfiles/shared_preferences.dart';
 import 'package:demoproject/component/reuseable_widgets/apptext.dart';
 import 'package:demoproject/component/reuseable_widgets/bottomTabBar.dart';
-import 'package:demoproject/ui/dashboard/chat/chatmethod/firestore.dart';
+import 'package:demoproject/component/reuseable_widgets/customNavigator.dart';
+import 'package:demoproject/ui/dashboard/chat/design/chatroom.dart';
 import 'package:demoproject/ui/dashboard/chat/design/photopreview.dart';
+import 'package:demoproject/ui/dashboard/chat/repository/service.dart' show CorettaChatRepository;
 // import 'package:demoproject/ui/dashboard/chat/design/chatroom.dart';
 import 'package:demoproject/ui/dashboard/explore/design/exploredetail.dart';
+import 'package:demoproject/ui/dashboard/home/cubit/homecubit/homecubit.dart';
+import 'package:demoproject/ui/dashboard/likes/fullprofileview.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:sizer/sizer.dart';
@@ -125,13 +130,14 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
 
   String userName = "";
-  FBCloudStore fbCloudStore = FBCloudStore();
   TextEditingController msgController = TextEditingController();
   String chatId = "";
   String imageUrl = "";
   var setroom;
   final TextEditingController _message = TextEditingController();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  CorettaChatRepository fbCloudStore = CorettaChatRepository();
+
   bool deleteloading = false;
   bool deleteuser = false;
 
@@ -222,11 +228,13 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       print("1234567890--->");
       print(widget.userName );
       print(widget.userId);
+      String messageText = _message.text.trim();
+      
       Map<String, dynamic> chatData = {
         "sendBy": widget.userId,
         "senderName": widget.userName,
         "senderimg": widget.profileImage,
-        "message": _message.text.trim(),
+        "message": messageText,
         "type": "text",
         "time": DateTime.now().millisecondsSinceEpoch,
       };
@@ -238,6 +246,14 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           .doc(widget.groupId)
           .collection('chats')
           .add(chatData);
+      
+      // Send notification to group members
+      log("📢 Sending group notification - Group ID: ${widget.groupId}, Message: $messageText, Group Name: ${widget.gropuname}");
+      fbCloudStore.sentNotiGroupMessage(
+        widget.groupId,
+        messageText,
+        widget.gropuname,
+      );
     }
   }
 
@@ -965,26 +981,40 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                           ),
                         ],
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10.h),
-                        child: imageUrl.isEmpty
-                            ? Icon(
-                                Icons.person,
-                                size: 12.h,
-                                color: Colors.grey[400],
-                              )
-                            : FadeInImage.assetNetwork(
-                                placeholder: 'assets/images/profile12.png',
-                                image: imageUrl,
-                                fit: BoxFit.cover,
-                                imageErrorBuilder: (_, __, ___) {
-                                  return Icon(
-                                    Icons.person,
-                                    size: 12.h,
-                                    color: Colors.grey[400],
-                                  );
-                                },
+                      child: GestureDetector(
+                        onTap: () {
+                          if (imageUrl.isNotEmpty) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PhotoViewScreen(
+                                  imagePath: imageUrl,
+                                ),
                               ),
+                            );
+                          }
+                        },
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10.h),
+                          child: imageUrl.isEmpty
+                              ? Icon(
+                                  Icons.person,
+                                  size: 12.h,
+                                  color: Colors.grey[400],
+                                )
+                              : FadeInImage.assetNetwork(
+                                  placeholder: 'assets/images/profile12.png',
+                                  image: imageUrl,
+                                  fit: BoxFit.cover,
+                                  imageErrorBuilder: (_, __, ___) {
+                                    return Icon(
+                                      Icons.person,
+                                      size: 12.h,
+                                      color: Colors.grey[400],
+                                    );
+                                  },
+                                ),
+                        ),
                       ),
                     ),
                     SizedBox(height: 3.h),
@@ -1014,19 +1044,116 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                       ),
                       child: Column(
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              _buildInfoItem(Icons.person, "Group Member"),
-                              _buildInfoItem(Icons.group, "Active"),
-                            ],
-                          ),
+                        
                           SizedBox(height: 2.h),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              _buildInfoItem(Icons.chat, "Chat Available"),
-                              _buildInfoItem(Icons.visibility, "Profile View"),
+                              // Start 1:1 chat using Firebase ID so we reuse same thread
+                              _buildInfoItem(Icons.chat, "Chat Available")
+                                  .onTap(() async {
+                                try {
+                                  final myData = await context.read<HomePageCubit>().getUserToken();
+                                  final String myUserId = myData['userID']?.toString() ?? '';
+                                  final String myImage = myData['profilePic']?.toString() ?? '';
+                                  final String myName = myData['name']?.toString() ?? '';
+
+                                  // Resolve Firebase UID and details from Firestore members
+                                  String otherFirebaseId = '';
+                                  String otherName = name ?? '';
+                                  String otherImage = imageUrl;
+                                  try {
+                                    final q = await FirebaseFirestore.instance
+                                        .collection('groups')
+                                        .doc(widget.groupId)
+                                        .collection('members')
+                                        .where('name', isEqualTo: name)
+                                        .limit(1)
+                                        .get();
+                                    if (q.docs.isNotEmpty) {
+                                      final doc = q.docs.first;
+                                      otherFirebaseId = doc.id; // member doc id is Firebase UID
+                                      final data = doc.data() as Map<String, dynamic>;
+                                      // DEBUG: print entire member map
+                                      print('👤 Group member doc: ${doc.id} data: $data');
+                                      otherName = (data['name'] ?? otherName).toString();
+                                      otherImage = (data['userImg'] ?? otherImage).toString();
+                                    }
+                                  } catch (e) {
+                                    log('Member lookup error: $e');
+                                  }
+
+                                  if (otherFirebaseId.isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('User is not chat-enabled yet.')),
+                                    );
+                                    return;
+                                  }
+
+                                  // DEBUG: final values before navigating to chat
+                                  print('💬 Open DM → otherFirebaseId: '+otherFirebaseId+' | otherName: '+otherName+' | otherImage: '+otherImage+' | myUserId: '+myUserId);
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ChatScreen(
+                                        otherUserId: otherFirebaseId, // ALWAYS Firebase ID
+                                        userId: myUserId,
+                                        profileImage: otherImage,
+                                        userName: otherName,
+                                        pageNavId: 0,
+                                        myImage: myImage,
+                                        name: myName,
+                                      ),
+                                    ),
+                                  );
+                                } catch (e) {
+                                  log('Group member chat open error: $e');
+                                }
+                              }),
+
+                              // Profile view: fetch backend id from member doc (common keys)
+                              _buildInfoItem(Icons.visibility, "Profile View").onTap(() async {
+                                try {
+                                  String backendId = '';
+                                  final q = await FirebaseFirestore.instance
+                                      .collection('groups')
+                                      .doc(widget.groupId)
+                                      .collection('members')
+                                      .where('name', isEqualTo: name)
+                                      .limit(1)
+                                      .get();
+                                  if (q.docs.isNotEmpty) {
+                                    final doc = q.docs.first;
+                                    final data = doc.data() as Map<String, dynamic>;
+                                    // DEBUG: print full data used for profile view
+                                    print('👁️ Profile view member doc: ${doc.id} data: $data');
+                                    // Prefer UID field for backend: 'uid' → then common fallbacks → finally doc.id
+                                    backendId = (
+                                      data['uid'] ??
+                                      data['_id'] ??
+                                      data['id'] ??
+                                      data['backend_id'] ??
+                                      doc.id
+                                    ).toString();
+                                  }
+                                  print('👁️ Open Profile → backendId: '+backendId+' | name: '+(name??'')+' | image: '+imageUrl);
+                                  if (backendId.isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Profile not available')),
+                                    );
+                                    return;
+                                  }
+                                  CustomNavigator.push(
+                                    context: context,
+                                    screen: AllDataView(id: backendId),
+                                  );
+                                } catch (e) {
+                                  log('Open profile error: $e');
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Could not open profile')),
+                                  );
+                                }
+                              }),
                             ],
                           ),
                         ],
@@ -1092,14 +1219,14 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   Icon(
                     icon,
                     color: AppColor.tinderclr,
-                    size: 6.w,
+                    size: 8.w,
                   ),
                   SizedBox(height: 0.5.h),
                   AppText(
                     text: label,
                     color: Colors.black87,
                     fontWeight: FontWeight.w500,
-                    size: 10.sp,
+                    size: 12.sp,
                   ),
                 ],
               ),

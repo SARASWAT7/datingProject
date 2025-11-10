@@ -46,7 +46,8 @@ import 'package:demoproject/component/apihelper/smart_cache_manager.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-const kGoogleApiKey = "AIzaSyCnRAGJaYpc4edJi8DcHaimmJ9mW4k4EVM";
+// const kGoogleApiKey = "AIzaSyCnRAGJaYpc4edJi8DcHaimmJ9mW4k4EVM";
+const kGoogleApiKey = "AIzaSyAhwCWDZWZupEU3IwmT7rbQFZzL2L047sA";
 
 // Test button function for debugging
 void _showTestButton() {
@@ -160,7 +161,10 @@ void main() async {
             // Check for app updates after a delay
             Future.delayed(Duration(seconds: 3), () {
               try {
-                UpdateManager.checkForUpdates(navigatorKey.currentState!.context);
+                final context = navigatorKey.currentState?.context;
+                if (context != null) {
+                  UpdateManager.checkForUpdates(context);
+                }
               } catch (e) {
                 if (kDebugMode) {
                   print('Update check error: $e');
@@ -322,7 +326,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       Future.delayed(Duration(seconds: 1), () {
         try {
-          UpdateManager.checkForUpdates(navigatorKey.currentState!.context);
+          final context = navigatorKey.currentState?.context;
+          if (context != null) {
+            UpdateManager.checkForUpdates(context);
+          }
         } catch (e) {
           if (kDebugMode) {
             print('Update check on resume error: $e');
@@ -375,12 +382,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             BlocProvider(create: (context) => SubscriptionCubit(userData)),
           ],
           child: MaterialApp(
-            builder: (context, child) {
-              return MediaQuery(
-                child: child!,
-                data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1)),
-              );
-            },
+            // Avoid recreating MediaQuery to prevent LateInitializationError
+            // on newer Flutter versions (e.g., _splitScreenMode not initialized)
+            builder: (context, child) => child ?? const SizedBox.shrink(),
             title: "Coretta",
             theme: ThemeData(primarySwatch: Colors.blue),
             home: const SplashScreen(),

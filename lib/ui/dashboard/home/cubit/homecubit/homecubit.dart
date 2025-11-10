@@ -1,4 +1,5 @@
 // ignore_for_file: use_build_context_synchronously, unused_local_variable
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'package:demoproject/component/apihelper/normalmessage.dart';
@@ -14,6 +15,7 @@ import 'package:demoproject/ui/dashboard/chat/model/datacreationmodel.dart';
 import 'package:demoproject/ui/dashboard/chat/repository/service.dart';
 import 'package:demoproject/ui/dashboard/home/cubit/homecubit/homestate.dart';
 import 'package:demoproject/ui/dashboard/home/match/match.dart';
+import 'package:demoproject/ui/dashboard/chat/design/chatroom.dart';
 import 'package:demoproject/ui/dashboard/home/repository/homerepository.dart';
 import 'package:demoproject/ui/dashboard/home/model/homeresponse.dart';
 import 'package:demoproject/ui/dashboard/profile/repository/service.dart';
@@ -30,6 +32,13 @@ class HomePageCubit extends Cubit<HomePageState> {
   HomeRepository repo = HomeRepository();
   FastDataService fastDataService = FastDataService();
   final int pageLimit = 10; // Reduced from 20 to 10 for faster loading
+  
+  @override
+  Future<void> close() {
+    // Clean up background timer when cubit is disposed
+    stopBackgroundRefresh();
+    return super.close();
+  }
   Future<String> gettoken() async {
   try {
     String? token = await FCMTokenHelper.getTokenWithRetry();
@@ -185,6 +194,13 @@ String token = await gettoken();
             // Preload next user images from cached data
             _preloadNextUserImages(0);
 
+            // CRITICAL: Ensure Firebase ID is saved even when using cached data
+            updateUserDatatoFirebase().then((_) {
+              log("✅ Firebase ID saved from cached data path");
+            }).catchError((e) {
+              log("⚠️ Error saving Firebase ID from cached path: $e");
+            });
+
             // Proactively load more users to prevent "no users found"
             Future.delayed(Duration(seconds: 2), () {
               if (state.hasMoreData && !state.isLoadingMore) {
@@ -241,17 +257,32 @@ String token = await gettoken();
           
           // Validate response before proceeding
           if (response.result?.users == null || response.result!.users!.isEmpty) {
-            emit(state.copyWith(status: ApiStates.error));
-            NormalMessage().normalerrorstate(context, "No users found. Please try again.");
+            // Don't show error immediately - this might be a temporary state
+            // Set hasMoreData to true to allow retries and show background message
+            emit(state.copyWith(
+              status: ApiStates.success, 
+              hasMoreData: true,
+              response: response,
+            ));
+            log("⚠️ No users in current batch - will retry later");
             return;
           }
 
           // 🧹 CACHE MANAGEMENT: Clear old user images to prevent showing wrong users
           await manageCacheForNewUsers(response);
           
-          // Run background operations in parallel (don't block UI)
+          // CRITICAL: Ensure Firebase ID is saved before any group/chat operations
+          // Run updateUserDatatoFirebase first to save Firebase ID from profile API
+          try {
+            await updateUserDatatoFirebase();
+            log("✅ Firebase ID saved successfully from profile API");
+          } catch (e) {
+            log("⚠️ Error saving Firebase ID: $e");
+            // Continue even if Firebase update fails
+          }
+          
+          // Run other background operations in parallel (don't block UI)
           Future.wait([
-            updateUserDatatoFirebase().catchError((e) {}),
             _getSubscriptionData(context).catchError((e) {}),
           ]);
           
@@ -278,7 +309,9 @@ String token = await gettoken();
           
           // Check if we have more data
           final usersCount = response.result?.users?.length ?? 0;
-          final hasMoreData = usersCount >= pageLimit;
+          // Always assume there might be more data unless we explicitly know there isn't
+          // This allows the app to continue checking for new users
+          final hasMoreData = true; // Always true to allow continuous checking for new users
           
           // Emit success state with error handling
           try {
@@ -399,7 +432,7 @@ String token = await gettoken();
         }
       }
     } catch (e) {
-      log("Error preloading next user images: $e");
+      // Ignore preload errors - not critical
     }
   }
 
@@ -428,8 +461,8 @@ String token = await gettoken();
       // Combine existing users with new users
       final combinedUsers = [...currentUsers, ...newUsers];
       
-      // Check if we have more data - be more lenient with the check
-      final hasMoreData = newUsers.length >= pageLimit;
+      // Always assume there might be more data to allow continuous checking
+      final hasMoreData = true;
       
       log("📊 Combined users: ${combinedUsers.length}, Has more data: $hasMoreData");
       
@@ -555,8 +588,16 @@ String token = await gettoken();
     }
   }
 
-  void likeSidlike(BuildContext context, String userId, String type,
-      String token, String likeuserName) async {
+  void likeSidlike(
+    BuildContext context,
+    String userId,
+    String type,
+    String token,
+    String likeuserName, {
+    String? otherFirebaseId,
+    String? otherDisplayName,
+    String? otherProfileImage,
+  }) async {
     log("🚀 Ultra-fast like/dislike: $likeuserName");
 
     // Validate token first
@@ -584,20 +625,24 @@ String token = await gettoken();
 
     log("🔍 Like/Dislike - Current index: ${state.currentIndex}, Total users: ${currentUsers.length}, Is at last user: $isAtLastUser, Is near end: $isNearEnd, Has more data: $hasMoreData, Is loading: $isLoadingMore");
 
+    // Simple cache clearing - no complex error handling
+    try {
+      final oldIndex = state.currentIndex;
+      if (oldIndex >= 0 && oldIndex < currentUsers.length) {
+        final currentUser = currentUsers[oldIndex];
+        if (currentUser.media != null && currentUser.media!.isNotEmpty) {
+          await clearUserImageCache(currentUser.media!);
+        }
+      }
+    } catch (e) {
+      // Ignore cache errors - not critical
+    }
+
     // Move to next user instantly (optimistic UI)
     emit(state.copyWith(
       status: ApiStates.success,
       currentIndex: nextIndex,
     ));
-
-    // 🧹 CACHE MANAGEMENT: Clear current user's images after like/dislike
-    if (state.currentIndex < currentUsers.length) {
-      final currentUser = currentUsers[state.currentIndex];
-      if (currentUser.media != null && currentUser.media!.isNotEmpty) {
-        await clearUserImageCache(currentUser.media!);
-        log("🧹 Cleared cache for liked/disliked user: ${currentUser.firstName}");
-      }
-    }
 
     // Preload next user's images immediately
     if (nextIndex >= 0) {
@@ -620,7 +665,17 @@ String token = await gettoken();
     // The above logic already handles proactive loading when needed
 
     // Run API call in background without blocking UI
-    _performLikeDislikeInBackground(context, userId, type, token, likeuserName, nextIndex);
+    _performLikeDislikeInBackground(
+      context,
+      userId,
+      type,
+      token,
+      likeuserName,
+      nextIndex,
+      otherFirebaseId: otherFirebaseId,
+      otherDisplayName: otherDisplayName,
+      otherProfileImage: otherProfileImage,
+    );
   }
 
   /// Background like/dislike API call
@@ -630,7 +685,8 @@ String token = await gettoken();
     String type,
     String token, 
     String likeuserName, 
-    int nextIndex
+    int nextIndex,
+    {String? otherFirebaseId, String? otherDisplayName, String? otherProfileImage}
   ) async {
     try {
       // Validate token before making API call
@@ -659,6 +715,19 @@ String token = await gettoken();
       }
     } catch (e) {
       log("❌ Like/Dislike API error: $e");
+
+      // Special-case: server says this pair is already matched
+      final errorText = e.toString().toLowerCase();
+      if (errorText.contains('already a match')) {
+        // Directly open chat with this user for a smooth dating flow
+        await _openChatWithUser(
+          otherFirebaseId ?? userId,
+          otherDisplayName ?? likeuserName,
+          otherImageOverride: otherProfileImage,
+        );
+        // Do not treat as failure; simply return
+        return;
+      }
       
       // Handle specific error types
       if (e.toString().contains('401') || e.toString().contains('Unauthorized')) {
@@ -670,6 +739,65 @@ String token = await gettoken();
       } else {
         // Generic error message
         NormalMessage.instance.normalerrorstate(context, "Failed to perform action. Please try again.");
+      }
+    }
+  }
+
+  /// Open chat screen with an already matched user
+  Future<void> _openChatWithUser(
+    String otherUserId,
+    String otherUserName, {
+    String? otherImageOverride,
+  }) async {
+    try {
+      // Get my chat token info (id, name, image)
+      final Map myData = await getUserToken();
+      final String myUserId = myData['userID']?.toString() ?? '';
+      final String myImage = myData['profilePic']?.toString() ?? '';
+      final String myName = myData['name']?.toString() ?? '';
+
+      // Try to find other user's profile image from current list
+      final currentUsers = state.response?.result?.users ?? [];
+      String otherImage = otherImageOverride ?? '';
+      String otherDisplayName = otherUserName;
+      for (final u in currentUsers) {
+        try {
+          if ((u.id?.toString() ?? '') == otherUserId) {
+            otherDisplayName = (u.firstName ?? otherUserName).toString();
+            final media = u.media;
+            if (media != null && media is List && (media as List).isNotEmpty) {
+              otherImage = (media as List).first.toString();
+            }
+            break;
+          }
+        } catch (_) {}
+      }
+
+      final ctx = navigatorKey.currentState?.context;
+      if (ctx == null) return;
+
+      Navigator.push(
+        ctx,
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            otherUserId: otherUserId,
+            userId: myUserId,
+            profileImage: otherImage,
+            userName: otherDisplayName,
+            pageNavId: 0,
+            myImage: myImage,
+            name: myName,
+          ),
+        ),
+      );
+    } catch (err) {
+      log('Open chat error: $err');
+      final ctx = navigatorKey.currentState?.context;
+      if (ctx != null) {
+        NormalMessage.instance.normalerrorstate(
+          ctx,
+          'Already a match. Please open Chat tab to continue.',
+        );
       }
     }
   }
@@ -716,6 +844,80 @@ String token = await gettoken();
     if (currentIndex >= totalUsers - 1 && state.hasMoreData && !state.isLoadingMore) {
       log("🔮 Proactively loading more users to prevent 'no users found'...");
       loadMoreUsers();
+    }
+  }
+
+  Timer? _backgroundTimer;
+  
+  /// Start periodic background refresh to check for new users (PRODUCTION SAFE)
+  void startBackgroundRefresh() {
+    // Cancel any existing timer first
+    _backgroundTimer?.cancel();
+    
+    // Check for new users every 60 seconds (reduced frequency for production)
+    _backgroundTimer = Timer.periodic(Duration(seconds: 60), (timer) {
+      // Only run if app is in foreground and no users available
+      final totalUsers = state.response?.result?.users?.length ?? 0;
+      if (totalUsers == 0 && !state.isLoadingMore && !isClosed) {
+        log("🔄 Background refresh: Checking for new users...");
+        _backgroundRefresh();
+      } else {
+        timer.cancel(); // Stop timer if we have users or cubit is closed
+        _backgroundTimer = null;
+      }
+    });
+  }
+  
+  /// Stop background refresh timer
+  void stopBackgroundRefresh() {
+    _backgroundTimer?.cancel();
+    _backgroundTimer = null;
+  }
+
+  int _backgroundRefreshAttempts = 0;
+  static const int _maxBackgroundRefreshAttempts = 5;
+  
+  /// Background refresh without context dependency (PRODUCTION SAFE)
+  void _backgroundRefresh() async {
+    try {
+      // Rate limiting: Don't refresh more than 5 times in background
+      if (_backgroundRefreshAttempts >= _maxBackgroundRefreshAttempts) {
+        log("🔄 Background refresh: Max attempts reached, stopping...");
+        stopBackgroundRefresh();
+        return;
+      }
+      
+      _backgroundRefreshAttempts++;
+      log("🔄 Background refresh attempt $_backgroundRefreshAttempts/$_maxBackgroundRefreshAttempts");
+      
+      final repo = HomeRepository();
+      final response = await repo.homePageApi(page: 1, limit: pageLimit);
+      
+      if (response.result?.users != null && response.result!.users!.isNotEmpty) {
+        // Reset attempts counter on success
+        _backgroundRefreshAttempts = 0;
+        
+        // Update state with new users
+        emit(state.copyWith(
+          status: ApiStates.success,
+          response: response,
+          hasMoreData: true,
+        ));
+        log("🔄 Background refresh: Found ${response.result!.users!.length} new users!");
+        
+        // Stop background refresh since we found users
+        stopBackgroundRefresh();
+      } else {
+        log("🔄 Background refresh: No new users found");
+      }
+    } catch (e) {
+      log("🔄 Background refresh error: $e");
+      
+      // If it's a network error, wait longer before next attempt
+      if (e.toString().contains('Connection') || e.toString().contains('timeout')) {
+        log("🔄 Network error detected, waiting 2 minutes before next attempt");
+        await Future.delayed(Duration(minutes: 2));
+      }
     }
   }
 

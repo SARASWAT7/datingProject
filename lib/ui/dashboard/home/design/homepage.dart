@@ -1,13 +1,14 @@
-import 'dart:developer';
+// import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sizer/sizer.dart';
-import 'package:velocity_x/velocity_x.dart';
+import 'package:lottie/lottie.dart';
 
 import '../../../../component/apihelper/urls.dart';
 import '../../../../component/reuseable_widgets/apperror.dart';
 import '../../../../component/reuseable_widgets/apptext.dart';
 import '../../../../component/reuseable_widgets/apploder.dart';
+// Premium upsell removed as per request
 import '../cubit/homecubit/homecubit.dart';
 import '../cubit/homecubit/homestate.dart';
 import 'homepagedata.dart';
@@ -22,9 +23,13 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   @override
   void initState() {
-    BlocProvider.of<HomePageCubit>(context).homeApi(context);
-
     super.initState();
+    // Use addPostFrameCallback to safely access context after widget is mounted
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        BlocProvider.of<HomePageCubit>(context).homeApi(context);
+      }
+    });
   }
 
   @override
@@ -46,17 +51,14 @@ class _HomePageState extends State<HomePage> {
             );
           } else if (state.response?.result?.users == null ||
               state.response!.result!.users!.isEmpty) {
+            // Start background refresh when no users are available
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                context.read<HomePageCubit>().startBackgroundRefresh();
+              }
+            });
             return SingleChildScrollView(
-              child: SizedBox(
-                height: 60.h,
-                child: Center(
-                  child: AppText(
-                    fontWeight: FontWeight.w500,
-                    size: 12.sp,
-                    text: "No Data Found",
-                  ).centered(),
-                ),
-              ),
+              child: _noMoreUsersWidget(context),
             );
           } else {
             return SingleChildScrollView(
@@ -86,16 +88,7 @@ class _HomePageState extends State<HomePage> {
                               ),
                             )
                           else if (!state.hasMoreData)
-                            SizedBox(
-                              height: 60.h,
-                              child: Center(
-                                child: AppText(
-                                  fontWeight: FontWeight.w500,
-                                  size: 12.sp,
-                                  text: "No More Users Found",
-                                ),
-                              ),
-                            )
+                            _noMoreUsersWidget(context)
                           else
                             Builder(
                               builder: (context) {
@@ -165,3 +158,96 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
+  Widget _noMoreUsersWidget(BuildContext context) {
+    return SingleChildScrollView(
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.pink.shade50,
+              Colors.white,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min, // Prevent overflow
+              children: [
+                // Animated Lottie loader - extra large and centered
+                Center(
+                  child: Lottie.asset(
+                    'assets/images/dating.json',
+                    width: 100.w,
+                    height: 100.w,
+                    fit: BoxFit.contain,
+                    repeat: true,
+                    animate: true,
+                  ),
+                ),
+                
+                SizedBox(height: 2.h),
+                
+                // Main message - smaller text
+                AppText(
+                  fontWeight: FontWeight.w700,
+                  size: 16.sp,
+                  text: "No more profiles found 💕",
+                  color: Colors.pink.shade700,
+                ),
+                
+                SizedBox(height: 0.5.h),
+                
+                // Sub message - smaller text
+                AppText(
+                  fontWeight: FontWeight.w400,
+                  size: 14.sp,
+                  text: "Check back later for new matches!",
+                  color: Colors.grey.shade600,
+                ),
+                
+                SizedBox(height: 2.h),
+                
+                // Refresh button - smaller
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xffFD5564),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () {
+                      context.read<HomePageCubit>().homeApi(context);
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.refresh_rounded, size: 20.sp),
+                        SizedBox(width: 1.w),
+                        AppText(
+                          fontWeight: FontWeight.w600,
+                          size: 16.sp,
+                          text: "Refresh",
+                          color: Colors.white,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }

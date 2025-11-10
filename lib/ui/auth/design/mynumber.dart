@@ -1,13 +1,9 @@
-import 'dart:io';
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:demoproject/component/commonfiles/appcolor.dart';
-import 'package:demoproject/component/reuseable_widgets/customNavigator.dart';
 import 'package:demoproject/component/reuseable_widgets/text_field.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../component/apihelper/common.dart';
 import '../../../component/apihelper/toster.dart';
@@ -18,12 +14,7 @@ import '../cubit/login/logincubit.dart';
 import '../cubit/login/loginstate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
-enum LoginType {
-  pePhone,
-  peEmail,
-  workEmail,
-}
+enum LoginType { pePhone, peEmail, workEmail }
 
 class MyNumber extends StatefulWidget {
   const MyNumber({Key? key}) : super(key: key);
@@ -98,7 +89,9 @@ class _MyNumberState extends State<MyNumber> {
     if (!await Geolocator.isLocationServiceEnabled()) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Location services are disabled. Please enable the services.'),
+          content: Text(
+            'Location services are disabled. Please enable the services.',
+          ),
         ),
       );
       return false;
@@ -118,7 +111,9 @@ class _MyNumberState extends State<MyNumber> {
     if (permission == LocationPermission.deniedForever) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Location permissions are permanently denied, we cannot request permissions.'),
+          content: Text(
+            'Location permissions are permanently denied, we cannot request permissions.',
+          ),
         ),
       );
       return false;
@@ -126,7 +121,6 @@ class _MyNumberState extends State<MyNumber> {
 
     return true;
   }
-
 
   LoginType? determineLoginType() {
     if (numberController.text.trim().isNotEmpty) {
@@ -138,7 +132,6 @@ class _MyNumberState extends State<MyNumber> {
     }
     return null;
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -176,7 +169,8 @@ class _MyNumberState extends State<MyNumber> {
                           const SizedBox(height: 7),
                           AppText(
                             size: 17,
-                            text: 'Don’t lose access to your account\nVerify your Phone Number.',
+                            text:
+                                'Don’t lose access to your account\nVerify your Phone Number.',
                             color: Color(0xff555555),
                             fontWeight: FontWeight.w500,
                           ),
@@ -188,7 +182,8 @@ class _MyNumberState extends State<MyNumber> {
                               Padding(
                                 padding: const EdgeInsets.only(top: 10.0),
                                 child: Container(
-                                  width: MediaQuery.of(context).size.width * 0.25,
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.25,
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(
@@ -199,8 +194,10 @@ class _MyNumberState extends State<MyNumber> {
                                   child: CountryCodePicker(
                                     onChanged: (countryCode) {
                                       setState(() {
-                                        showFlag = countryCode.toString().length <= 2;
-                                        codeController.text = countryCode.dialCode!;
+                                        showFlag =
+                                            countryCode.toString().length <= 2;
+                                        codeController.text =
+                                            countryCode.dialCode!;
                                         countryCodee = countryCode.dialCode!;
                                       });
                                     },
@@ -226,7 +223,8 @@ class _MyNumberState extends State<MyNumber> {
                                   textInputType: TextInputType.number,
                                   hint: 'Phone Number',
                                   hintColor: Colors.black,
-                                  textFieldTitleColor: Colors.black, title: '',
+                                  textFieldTitleColor: Colors.black,
+                                  title: '',
                                 ),
                               ),
                             ],
@@ -240,18 +238,32 @@ class _MyNumberState extends State<MyNumber> {
 
                                 if (numberController.text.trim().isNotEmpty &&
                                     emailController.text.trim().isNotEmpty &&
-                                    workEmailController.text.trim().isNotEmpty) {
-                                  showToast(context, 'Please select only one login credential.');
+                                    workEmailController.text
+                                        .trim()
+                                        .isNotEmpty) {
+                                  showToast(
+                                    context,
+                                    'Please select only one login credential.',
+                                  );
                                   return;
                                 }
 
                                 if ((numberController.text.trim().isNotEmpty &&
-                                    emailController.text.trim().isNotEmpty) ||
+                                        emailController.text
+                                            .trim()
+                                            .isNotEmpty) ||
                                     (numberController.text.trim().isNotEmpty &&
-                                        workEmailController.text.trim().isNotEmpty) ||
+                                        workEmailController.text
+                                            .trim()
+                                            .isNotEmpty) ||
                                     (emailController.text.trim().isNotEmpty &&
-                                        workEmailController.text.trim().isNotEmpty)) {
-                                  showToast(context, 'Please select only one login credential.');
+                                        workEmailController.text
+                                            .trim()
+                                            .isNotEmpty)) {
+                                  showToast(
+                                    context,
+                                    'Please select only one login credential.',
+                                  );
                                   return;
                                 }
 
@@ -289,7 +301,10 @@ class _MyNumberState extends State<MyNumber> {
                                       break;
                                   }
                                 } else {
-                                  showToast(context, 'Please fill only one field.');
+                                  showToast(
+                                    context,
+                                    'Please fill only one field.',
+                                  );
                                 }
                               },
 
@@ -310,4 +325,3 @@ class _MyNumberState extends State<MyNumber> {
     );
   }
 }
-

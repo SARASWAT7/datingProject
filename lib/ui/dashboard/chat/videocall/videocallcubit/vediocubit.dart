@@ -71,8 +71,8 @@ class VideoCallCubit extends Cubit<VideoCallState> {
         emit(state.copyWith(
             mute: false,
             speakerOn: videobool,
-            sendername: value.docs.first.data()['userName'],
-            senderImage: value.docs.first.data()['userImage'] ??
+            sendername: "${value.docs.first.data()['firstName'] ?? ''} ${value.docs.first.data()['lastName'] ?? ''}".trim(),
+            senderImage: value.docs.first.data()['profilePicture'] ??
                 "assets/images/nopicdummy.png"));
       } else {
         emit(state.copyWith(

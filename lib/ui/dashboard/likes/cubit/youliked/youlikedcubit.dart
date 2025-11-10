@@ -27,9 +27,10 @@ class YouLikedCubit extends Cubit<YouLikedState> {
     hasMoreData = true;
     
     try {
+      print("amit1234567890");
       log("🚀 Starting youLiked in YouLikedCubit with page $currentPage");
       final response = await repo.youLiked(page: currentPage, limit: pageLimit);
-      
+      print("amit1234567890${response.result?.length}");
       log("✅ You Liked API Response received successfully");
       log("📊 Users count: ${response.result?.length}");
       

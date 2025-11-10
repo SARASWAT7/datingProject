@@ -142,19 +142,19 @@ class _ChatRoomUserImageForVideoState extends State<ChatRoomUserImageForVideo> {
                                 ? Image.asset("assets/images/nopicdummysq.png")
                                     .image
                                 : (snapshot.data?.docs.first
-                                                .data()['userImage']
+                                                .data()['profilePicture']
                                                 .toString() ??
                                             "")
                                         .isEmpty
                                     ? Image.asset("assets/nopicdummy.png").image
                                     : NetworkImage((snapshot.data?.docs.first
-                                                    .data()['userImage']
+                                                    .data()['profilePicture']
                                                     .toString() ??
                                                 "")
                                             .isEmpty
                                         ? ""
                                         : (snapshot.data?.docs.first
-                                                .data()['userImage']
+                                                .data()['profilePicture']
                                                 .toString() ??
                                             "")),
                             fit: BoxFit.cover,

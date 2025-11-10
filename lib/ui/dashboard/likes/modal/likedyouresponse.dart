@@ -23,8 +23,8 @@ class LikedYouResponse {
 
 class Result {
   final String? id;
-  final String? userId;
-  final LikedUserId? likedUserId;
+  final UserId? userId;
+  final String? likedUserId;
   final bool? isRead;
   final String? type;
   final String? createdAt;
@@ -42,8 +42,8 @@ class Result {
 
   Result.fromJson(Map<String, dynamic> json)
     : id = json['_id'] as String?,
-      userId = json['user_id'] as String?,
-      likedUserId = (json['liked_user_id'] as Map<String,dynamic>?) != null ? LikedUserId.fromJson(json['liked_user_id'] as Map<String,dynamic>) : null,
+      userId = (json['user_id'] as Map<String,dynamic>?) != null ? UserId.fromJson(json['user_id'] as Map<String,dynamic>) : null,
+      likedUserId = json['liked_user_id'] as String?,
       isRead = json['isRead'] as bool?,
       type = json['type'] as String?,
       createdAt = json['createdAt'] as String?,
@@ -51,8 +51,8 @@ class Result {
 
   Map<String, dynamic> toJson() => {
     '_id' : id,
-    'user_id' : userId,
-    'liked_user_id' : likedUserId?.toJson(),
+    'user_id' : userId?.toJson(),
+    'liked_user_id' : likedUserId,
     'isRead' : isRead,
     'type' : type,
     'createdAt' : createdAt,
@@ -60,33 +60,37 @@ class Result {
   };
 }
 
-class LikedUserId {
+class UserId {
   final String? id;
   final String? firstName;
   final String? lastName;
   final int? age;
   final String? profilePicture;
+  final int? firebaseId;
 
-  LikedUserId({
+  UserId({
     this.id,
     this.firstName,
     this.lastName,
     this.age,
     this.profilePicture,
+    this.firebaseId,
   });
 
-  LikedUserId.fromJson(Map<String, dynamic> json)
+  UserId.fromJson(Map<String, dynamic> json)
     : id = json['_id'] as String?,
       firstName = json['first_name'] as String?,
       lastName = json['last_name'] as String?,
       age = json['age'] as int?,
-      profilePicture = json['profile_picture'] as String?;
+      profilePicture = json['profile_picture'] as String?,
+      firebaseId = json['firebase_id'] as int?;
 
   Map<String, dynamic> toJson() => {
     '_id' : id,
     'first_name' : firstName,
     'last_name' : lastName,
     'age' : age,
-    'profile_picture' : profilePicture
+    'profile_picture' : profilePicture,
+    'firebase_id' : firebaseId
   };
 }

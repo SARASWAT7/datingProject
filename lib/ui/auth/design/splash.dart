@@ -161,7 +161,8 @@ bool startUp= false;
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Spacer(),     Image.asset(
+              Spacer(),
+              Image.asset(
                 'assets/images/pinkheart.png',
                 height: 200,
                 width: 200,

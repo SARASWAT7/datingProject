@@ -34,13 +34,11 @@ class _GetStartedState extends State<GetStarted> {
                   size: 20,
                   maxLines: 3,
                   text:
-                      'Lempire Coretta note some questions to calculate compatiblity with your perfect match.',
+                      'Lempire Coretta note some Questions to calculate compatiblity With your perfect match.',
                   color: Color(0xff000000),
                   weight: FontWeight.w600,
                   fontFamily: 'Nunito Sans'),
-              SizedBox(height: MediaQuery.of(context).size.height * 0.1),
               Image.asset('assets/images/message.png', width: 384, height: 302),
-              SizedBox(height: MediaQuery.of(context).size.height * 0.1),
               GestureDetector(
                 onTap: () {
                   CustomNavigator.push(
@@ -49,7 +47,7 @@ class _GetStartedState extends State<GetStarted> {
                 child: const Align(
                   alignment: Alignment.bottomCenter,
                   child: Padding(
-                    padding: EdgeInsets.all(25.0),
+                    padding: EdgeInsets.all(20.0),
                     child: CustomButton(text: 'Get Started'),
                   ),
 

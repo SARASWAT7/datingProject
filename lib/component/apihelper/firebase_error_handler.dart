@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:demoproject/firebase_options.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -17,8 +18,10 @@ class FirebaseErrorHandler {
     try {
       dev.log('🔥 Initializing Firebase...');
       
-      // Initialize Firebase Core
-      await Firebase.initializeApp();
+      // Initialize Firebase Core with platform-specific options
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
       dev.log('✅ Firebase Core initialized');
       
       // Initialize Crashlytics

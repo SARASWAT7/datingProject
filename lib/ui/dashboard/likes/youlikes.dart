@@ -3,7 +3,6 @@ import 'package:demoproject/component/reuseable_widgets/customNavigator.dart';
 import 'package:demoproject/ui/dashboard/likes/fullprofileview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:sizer/sizer.dart';
 import 'package:velocity_x/velocity_x.dart';
@@ -104,18 +103,22 @@ class _YouLikeState extends State<YouLike> {
               final imageUrl = result.likedUserId?.profilePicture ?? '';
               final userName = '${result.likedUserId?.firstName ?? ''}, ${result.likedUserId?.age ?? ''}';
               final id = result.likedUserId?.id ?? '';
+              
+              // Debug logging for each user
+              print("   🔍 You Liked - User $index:");
+              print("   📝 Full result: ${result.toJson()}");
+              print("   👤 User ID: $id");
+              print("   🖼️ Image URL: $imageUrl");
+              print("   📛 User Name: $userName");
+              print("   📊 Liked User Data: ${result.likedUserId?.toJson()}");
 
-              return StaggeredGridTile.count(
-                crossAxisCellCount: 4,
-                mainAxisCellCount: 2,
-                child: Transform(
-                  transform: Matrix4.identity()
-                    ..setEntry(3, 2, 0.001) // Perspective effect
-                    ..rotateX(-0.01) // Slight tilt effect
-                    ..rotateY(0.01), // Slight tilt effect
-                  alignment: FractionalOffset.center,
-                  child:
-                CachedNetworkImage(
+              return Transform(
+                transform: Matrix4.identity()
+                  ..setEntry(3, 2, 0.001) // Perspective effect
+                  ..rotateX(-0.01) // Slight tilt effect
+                  ..rotateY(0.01), // Slight tilt effect
+                alignment: FractionalOffset.center,
+                child: CachedNetworkImage(
                     height: MediaQuery.of(context).size.height * 0.25,
                     width: MediaQuery.of(context).size.width * .02,
                     imageUrl: imageUrl,
@@ -201,8 +204,7 @@ class _YouLikeState extends State<YouLike> {
                     fit: BoxFit.fill,
                     filterQuality: FilterQuality.high,
                   ),
-                ),
-              );
+                );
             },
           ).pOnly(left: 3.w, right: 3.w);
         },

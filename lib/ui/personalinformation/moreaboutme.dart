@@ -217,7 +217,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                           padding: const EdgeInsets.only(left: 17, right: 17),
                           child: CustomText(
                             text: 'Language',
-                            size: 14.sp,
+                            size: 15.sp,
                             color: Colors.black,
                             weight: FontWeight.w600,
                             fontFamily: 'Nunito Sans',
@@ -225,7 +225,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                         ),
                         1.h.heightBox,
                         Padding(
-                          padding: const EdgeInsets.only(left: 17, right: 17),
+                          padding: const EdgeInsets.only(left: 15, right: 15),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 10),
                             child: DropdownSearch<String>.multiSelection(
@@ -238,7 +238,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                                     "Select Options",
                                     style: TextStyle(
                                       color: Colors.black,
-                                      fontSize: 18.sp,
+                                      fontSize: 13.sp,
                                       fontFamily: 'NunitoSans',
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -250,7 +250,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       color: Colors.black,
-                                      fontSize: 18.sp,
+                                      fontSize: 14.sp,
                                       fontFamily: 'NunitoSans',
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -298,7 +298,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                           padding: const EdgeInsets.only(left: 17, right: 17),
                           child: CustomText(
                             text: 'Exercise',
-                            size: 14.sp,
+                            size: 15.sp,
                             color: Colors.black,
                             weight: FontWeight.w600,
                             fontFamily: 'Nunito Sans',
@@ -332,15 +332,15 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                               style: TextStyle(
                                 height: 2,
                                 color: Colors.black,
-                                fontSize: 18.sp,
+                                fontSize: 14.sp,
                                 fontFamily: 'NunitoSans',
                                 fontWeight: FontWeight.w600,
                               ),
                               hint: CustomText(
                                 color: Colors.black,
-                                weight: FontWeight.w600,
+                                weight: FontWeight.w500,
                                 fontFamily: 'Nunito Sans',
-                                size: 12.sp,
+                                size: 14.sp,
                                 text: 'Please choose an option',
                               ), // Not necessary for Option 1
                               value: exerciseController,
@@ -365,7 +365,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                           padding: const EdgeInsets.only(left: 17, right: 17),
                           child: CustomText(
                             text: 'Smoking',
-                            size: 14.sp,
+                            size: 15.sp,
                             color: Colors.black,
                             weight: FontWeight.w600,
                             fontFamily: 'Nunito Sans',
@@ -400,7 +400,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                               style: TextStyle(
                                 height: 2,
                                 color: Colors.black,
-                                fontSize: 18.sp,
+                                fontSize: 14.sp,
                                 fontFamily: 'NunitoSans',
                                 fontWeight: FontWeight.w600,
                               ),
@@ -408,7 +408,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                                 color: Colors.black,
                                 weight: FontWeight.w600,
                                 fontFamily: 'Nunito Sans',
-                                size: 12.sp,
+                                size: 14.sp,
                                 text: 'Please choose an option',
                               ), // Not necessary for Option 1
                               value: smokingController,
@@ -433,7 +433,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                           padding: const EdgeInsets.only(left: 17, right: 17),
                           child: CustomText(
                             text: 'Drinking',
-                            size: 14.sp,
+                            size: 15.sp,
                             color: Colors.black,
                             weight: FontWeight.w700,
                             fontFamily: 'Nunito Sans',
@@ -468,7 +468,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                               style: TextStyle(
                                 height: 2,
                                 color: Colors.black,
-                                fontSize: 18.sp,
+                                fontSize: 14.sp,
                                 fontFamily: 'NunitoSans',
                                 fontWeight: FontWeight.w600,
                               ),
@@ -476,7 +476,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                                 color: Colors.black,
                                 weight: FontWeight.w600,
                                 fontFamily: 'Nunito Sans',
-                                size: 12.sp,
+                                size: 14.sp,
                                 text: 'Please choose an option',
                               ), // Not necessary for Option 1
                               value: drinkingController,
@@ -501,7 +501,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                           padding: const EdgeInsets.only(left: 17, right: 17),
                           child: CustomText(
                             text: 'Religion',
-                            size: 14.sp,
+                            size: 15.sp,
                             color: Colors.black,
                             weight: FontWeight.w700,
                             fontFamily: 'Nunito Sans',
@@ -536,7 +536,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                               style: TextStyle(
                                 height: 2,
                                 color: Colors.black,
-                                fontSize: 18.sp,
+                                fontSize: 14.sp,
                                 fontFamily: 'NunitoSans',
                                 fontWeight: FontWeight.w600,
                               ),
@@ -544,7 +544,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                                 color: Colors.black,
                                 weight: FontWeight.w600,
                                 fontFamily: 'Nunito Sans',
-                                size: 12.sp,
+                                size: 14.sp,
                                 text: 'Please choose an option',
                               ), // Not necessary for Option 1
                               value: religionController,
@@ -625,7 +625,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                           padding: const EdgeInsets.only(left: 17, right: 17),
                           child: CustomText(
                             text: 'Do You Have Kids?',
-                            size: 14.sp,
+                            size: 15.sp,
                             color: Colors.black,
                             weight: FontWeight.w700,
                             fontFamily: 'Nunito Sans',
@@ -660,7 +660,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                               style: TextStyle(
                                 height: 2,
                                 color: Colors.black,
-                                fontSize: 18.sp,
+                                fontSize: 14.sp,
                                 fontFamily: 'NunitoSans',
                                 fontWeight: FontWeight.w600,
                               ),
@@ -668,7 +668,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                                 color: Colors.black,
                                 weight: FontWeight.w600,
                                 fontFamily: 'Nunito Sans',
-                                size: 12.sp,
+                                size: 14.sp,
                                 text: 'Please choose an option',
                               ), // Not necessary for Option 1
                               value: kidController,
@@ -692,7 +692,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                           padding: const EdgeInsets.only(left: 17, right: 17),
                           child: CustomText(
                             text: 'Politics',
-                            size: 14.sp,
+                            size: 15.sp,
                             color: Colors.black,
                             weight: FontWeight.w600,
                             fontFamily: 'Nunito Sans',
@@ -727,7 +727,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                               style: TextStyle(
                                 height: 2,
                                 color: Colors.black,
-                                fontSize: 18.sp,
+                                fontSize: 14.sp,
                                 fontFamily: 'NunitoSans',
                                 fontWeight: FontWeight.w600,
                               ),
@@ -735,7 +735,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                                 color: Colors.black,
                                 weight: FontWeight.w600,
                                 fontFamily: 'Nunito Sans',
-                                size: 12.sp,
+                                size: 14.sp,
                                 text: 'Please choose an option',
                               ), // Not necessary for Option 1
                               value: politicsController,
@@ -760,7 +760,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                           padding: const EdgeInsets.only(left: 17, right: 17),
                           child: CustomText(
                             text: 'Pets',
-                            size: 14.sp,
+                            size: 15.sp,
                             color: Colors.black,
                             weight: FontWeight.w700,
                             fontFamily: 'Nunito Sans',
@@ -797,7 +797,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                                   iconEnabledColor: Colors.black,
                                   style: TextStyle(
                                     color: Colors.black,
-                                    fontSize: 18.sp,
+                                    fontSize: 14.sp,
                                     fontFamily: 'NunitoSans',
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -805,7 +805,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                                     color: Colors.black,
                                     weight: FontWeight.w600,
                                     fontFamily: 'Nunito Sans',
-                                    size: 11.sp,
+                                    size: 14.sp,
                                     text: 'Please choose an option',
                                   ),
                                   value: petsController,
@@ -831,7 +831,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                           padding: const EdgeInsets.only(left: 17, right: 17),
                           child: CustomText(
                             text: 'Relationship',
-                            size: 14.sp,
+                            size: 15.sp,
                             color: Colors.black,
                             weight: FontWeight.w700,
                             fontFamily: 'Nunito Sans',
@@ -868,7 +868,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                                   iconEnabledColor: Colors.black,
                                   style: TextStyle(
                                     color: Colors.black,
-                                    fontSize: 18.sp,
+                                    fontSize: 14.sp,
                                     fontFamily: 'NunitoSans',
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -876,7 +876,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                                     color: Colors.black,
                                     weight: FontWeight.w600,
                                     fontFamily: 'Nunito Sans',
-                                    size: 12.sp,
+                                    size: 14.sp,
                                     text: 'Please choose an option',
                                   ),
                                   value: relationshipController,
@@ -903,7 +903,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                           padding: const EdgeInsets.only(left: 17, right: 17),
                           child: CustomText(
                             text: 'SunSign',
-                            size: 14.sp,
+                            size: 15.sp,
                             color: Colors.black,
                             weight: FontWeight.w700,
                             fontFamily: 'Nunito Sans',
@@ -939,7 +939,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                                   iconEnabledColor: Colors.black,
                                   style: TextStyle(
                                     color: Colors.black,
-                                    fontSize: 18.sp,
+                                    fontSize: 14.sp,
                                     fontFamily: 'NunitoSans',
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -947,7 +947,7 @@ class _MoreAboutMeScreenState extends State<MoreAboutMeScreen> {
                                     color: Colors.black,
                                     weight: FontWeight.w600,
                                     fontFamily: 'Nunito Sans',
-                                    size: 12.sp,
+                                    size: 14.sp,
                                     text: 'Please choose an option',
                                   ),
                                   value: sunsignController,

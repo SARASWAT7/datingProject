@@ -46,14 +46,17 @@ class _IntroBottomSheetState extends State<IntroBottomSheet> {
 
     return WillPopScope(
       onWillPop: () async {
-        // Show Bottom Bar when user attempts to dismiss the bottom sheet
-        await BottomBar();
+        // Safe navigation check
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
         return true;
       },
       child: GestureDetector(
         onTap: () {
-          BottomBar();
-          Navigator.of(context).pop(); // Close the bottom sheet on tapping outside
+          if (mounted && Navigator.canPop(context)) {
+            Navigator.of(context).pop(); // Close the bottom sheet on tapping outside
+          }
         },
         behavior: HitTestBehavior.opaque,
         child: BlocProvider(

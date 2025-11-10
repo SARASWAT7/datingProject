@@ -5,20 +5,19 @@ enum ApiStates { loading, normal, success, error, initial }
 class UrlEndpoints {
   //////////////////////WEBMOBRIL///////////////////////////
 
-  // static String baseUrl = "http://192.168.11.190:10061/api/v1/";
+  // static String baseUrl = "http://172.16.100.230:10061/api/v1/";
 
   ////////////////////////AWS///////////////////////////////
 
-  // static String baseUrl = "https://www.lempiredating.com/api/v1/";
+  static String baseUrl = "https://www.lempiredating.com/api/v1/";
 
   ///////////////////KRISHAN/////////////////////////
-
-  // static String baseUrl = "http://172.16.3.32:10061/api/v1/";
+ 
+  // static String baseUrl = "http://172.16.2.34:10061/api/v1/";
 
   ///////////////////shubham yadav/////////////////////////
 
-  static String baseUrl = "http://172.16.100.230:10061/api/v1/";
-
+  // static String baseUrl = "http://172.16.100.230:10061/api/v1/";
 
   static String login = "user/login-phone";
   static String verifyOtpWithPhone = "user/verification";
@@ -62,5 +61,4 @@ class UrlEndpoints {
   static String sendLike = "user/like-reel";
   static String getSub = "user/get-user-subscription";
   static String sendSub = "user/in-app-purchase-subscription";
-  
 }

@@ -32,13 +32,18 @@ class _AllDataViewState extends State<AllDataView> {
   void initState() {
     super.initState();
     getToken();
-    Helper.executeWithConnectivityCheck(
-      context,
-      () async {
-        BlocProvider.of<GetUserByIdCubit>(context).UserById(widget.id);
-      },
-    );
     _pageController = PageController();
+    // Use addPostFrameCallback to safely access context after widget is mounted
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Helper.executeWithConnectivityCheck(
+          context,
+          () async {
+            BlocProvider.of<GetUserByIdCubit>(context).UserById(widget.id);
+          },
+        );
+      }
+    });
   }
 
   @override
@@ -288,21 +293,20 @@ class _AllDataViewState extends State<AllDataView> {
                     ),
                     SizedBox(height: height / 30),
                     // Quotes
-                    ProfileInfoCard(
-                      showEditIcon: false,
-
-                      title: 'Quotes',
-                      items: [
-                        ProfileInfoItem(
-
-                          icon: Image.asset('assets/images/quote.png', width: 34, height: 34),
-                          text: state.homeResponse!.result?.quote??"", // Replace with actual data
-                        ),
-                      ],
-                      onEditPressed: () {
-                        // CustomNavigator.push(context: context, screen: MoreAboutMe());
-                      },
-                    ),
+                    if ((state.homeResponse?.result?.quote ?? "").trim().isNotEmpty)
+                      ProfileInfoCard(
+                        showEditIcon: false,
+                        title: 'Quotes',
+                        items: [
+                          ProfileInfoItem(
+                            icon: Image.asset('assets/images/quote.png', width: 34, height: 34),
+                            text: state.homeResponse!.result?.quote ?? "",
+                          ),
+                        ],
+                        onEditPressed: () {
+                          // CustomNavigator.push(context: context, screen: MoreAboutMe());
+                        },
+                      ),
                     SizedBox(height: height / 30),
                   ],
                 ),
