@@ -652,7 +652,9 @@ class HomePageCubit extends Cubit<HomePageState> {
     String userId,
     String type,
     String token,
+
     String likeuserName, {
+    bool isLikeScreen = false,
     String? otherFirebaseId,
     String? otherDisplayName,
     String? otherProfileImage,
@@ -735,6 +737,7 @@ class HomePageCubit extends Cubit<HomePageState> {
       token,
       likeuserName,
       nextIndex,
+      isLikeScreen: isLikeScreen,
       otherFirebaseId: otherFirebaseId,
       otherDisplayName: otherDisplayName,
       otherProfileImage: otherProfileImage,
@@ -749,6 +752,7 @@ class HomePageCubit extends Cubit<HomePageState> {
     String token,
     String likeuserName,
     int nextIndex, {
+    bool isLikeScreen = false,
     String? otherFirebaseId,
     String? otherDisplayName,
     String? otherProfileImage,
@@ -795,11 +799,13 @@ class HomePageCubit extends Cubit<HomePageState> {
       final errorText = e.toString().toLowerCase();
       if (errorText.contains('already a match')) {
         // Directly open chat with this user for a smooth dating flow
-        // await _openChatWithUser(
-        //   otherFirebaseId ?? userId,
-        //   otherDisplayName ?? likeuserName,
-        //   otherImageOverride: otherProfileImage,
-        // );
+        if (isLikeScreen) {
+          await _openChatWithUser(
+            otherFirebaseId ?? userId,
+            otherDisplayName ?? likeuserName,
+            otherImageOverride: otherProfileImage,
+          );
+        }
         // Do not treat as failure; simply return
         return;
       }
