@@ -273,10 +273,10 @@ class CorettaChatRepository {
       final message = e.response?.data is Map
           ? (e.response?.data['message']?.toString() ?? 'Something went wrong')
           : (e.message ?? 'Network error');
-      Fluttertoast.showToast(msg: message);
+      // Fluttertoast.showToast(msg: message);
       throw message;
     } catch (e) {
-      Fluttertoast.showToast(msg: e.toString());
+      // Fluttertoast.showToast(msg: e.toString());
       throw e.toString();
     }
   }
@@ -303,17 +303,18 @@ class CorettaChatRepository {
       final response = await dio.post(
         "user/sendNotificationToGroup",
         data: {
-          "group_id": groupID, 
-          "messageString": message, 
+          "group_id": groupID,
+          "messageString": message,
           "groupName": groupName,
-          "data": ""
+          "data": "",
         },
       );
 
       return sentNotification.fromJson(response.data);
     } on DioException catch (e) {
       print("${e.response?.data}  Group Notification Error ===============>");
-      throw e.response?.data['message'].toString() ?? "Group notification failed";
+      throw e.response?.data['message'].toString() ??
+          "Group notification failed";
     } catch (e) {
       throw e.toString();
     }

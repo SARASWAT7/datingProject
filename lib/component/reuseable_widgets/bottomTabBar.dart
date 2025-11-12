@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:demoproject/ui/dashboard/home/repository/homerepository.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,6 +23,13 @@ class BottomBar extends StatefulWidget {
 }
 
 class _BottomBarState extends State<BottomBar> {
+  updateDeviceToken() async {
+    final response = await HomeRepository().devicetoken();
+    if (response == "success") {
+      setState(() {});
+    }
+  }
+
   int currentIndex = 2;
 
   // // updatecall() async {}
@@ -99,6 +107,7 @@ class _BottomBarState extends State<BottomBar> {
 
   @override
   void initState() {
+    updateDeviceToken();
     setState(() {
       currentIndex = widget.currentIndex;
     });

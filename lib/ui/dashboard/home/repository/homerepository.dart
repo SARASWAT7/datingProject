@@ -12,6 +12,7 @@ import 'package:demoproject/ui/dashboard/live/cubit/liveresponse.dart';
 import 'package:demoproject/ui/match/model/agreedisagreeresponse.dart';
 import 'package:demoproject/ui/match/model/firebaseiduser.dart';
 import 'package:dio/dio.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../match/model/getuserbyidmodel.dart';
@@ -28,17 +29,16 @@ class HomeRepository {
     try {
       SharedPreferences pref = await SharedPreferences.getInstance();
       token = pref.getString("token") ?? "";
-      
-      log("Making home page API call with token: ${token.isNotEmpty ? 'Present' : 'Missing'}");
+
+      log(
+        "Making home page API call with token: ${token.isNotEmpty ? 'Present' : 'Missing'}",
+      );
       log("📄 Home API - Page: $page, Limit: $limit");
-      
+
       // Use the enhanced API service with retry logic
       final response = await ApiService(token: token).requestWithRetry(
         HomeUriPath.homeApi,
-        queryParameters: {
-          'page': page,
-          'limit': limit,
-        },
+        queryParameters: {'page': page, 'limit': limit},
         options: Options(
           headers: {
             'Content-Type': 'application/json',
@@ -46,23 +46,23 @@ class HomeRepository {
           },
         ),
       );
-      
+
       if (response.data == null) {
         throw Exception("No data received from server");
       }
-      
+
       log("Home API response received: ${response.statusCode}");
       log("Response data: ${response.data}");
-      
+
       // Validate response data before parsing
       if (!DataValidator.isValidResponse(response.data)) {
         throw Exception("Invalid response data from server");
       }
-      
+
       if (!DataValidator.isValidApiResponse(response.data)) {
         throw Exception("Invalid API response structure");
       }
-      
+
       try {
         return HomeResponse.fromJson(response.data);
       } catch (parseError) {
@@ -70,10 +70,9 @@ class HomeRepository {
         CrashHandler.recordError(parseError, null);
         throw Exception("Failed to parse server response. Please try again.");
       }
-      
     } catch (e) {
       log("Home API error: $e");
-      
+
       if (e is DioException) {
         // Handle specific DioException types
         if (e.response?.statusCode == 401) {
@@ -84,21 +83,29 @@ class HomeRepository {
           throw Exception("Access denied. Please check your permissions.");
         } else if (e.response?.statusCode == 404) {
           log("API endpoint not found");
-          throw Exception("Service temporarily unavailable. Please try again later.");
+          throw Exception(
+            "Service temporarily unavailable. Please try again later.",
+          );
         } else if (e.response?.statusCode == 500) {
           log("Server error");
           throw Exception("Server error. Please try again later.");
         } else if (e.type == DioExceptionType.connectionTimeout ||
-                   e.type == DioExceptionType.receiveTimeout ||
-                   e.type == DioExceptionType.sendTimeout) {
+            e.type == DioExceptionType.receiveTimeout ||
+            e.type == DioExceptionType.sendTimeout) {
           log("Timeout error: ${e.type}");
-          throw Exception("Request timeout. Please check your internet connection and try again.");
+          throw Exception(
+            "Request timeout. Please check your internet connection and try again.",
+          );
         } else if (e.type == DioExceptionType.unknown) {
           log("Unknown error: ${e.message}");
           if (e.message?.contains('Connection closed') == true) {
-            throw Exception("Connection lost. Please check your internet connection and try again.");
+            throw Exception(
+              "Connection lost. Please check your internet connection and try again.",
+            );
           } else {
-            throw Exception("Network error. Please check your internet connection and try again.");
+            throw Exception(
+              "Network error. Please check your internet connection and try again.",
+            );
           }
         } else {
           log("Other DioException: ${e.type} - ${e.message}");
@@ -116,9 +123,9 @@ class HomeRepository {
     SharedPreferences pref = await SharedPreferences.getInstance();
     token = pref.getString("token") ?? "";
     try {
-      final response = await ApiService(token: token)
-          .sendRequest
-          .post(UrlEndpoints.filterApi, data: data);
+      final response = await ApiService(
+        token: token,
+      ).sendRequest.post(UrlEndpoints.filterApi, data: data);
 
       // log("${response.data} ========================================>");
       return HomeResponse.fromJson(response.data);
@@ -131,14 +138,21 @@ class HomeRepository {
   }
 
   Future<LikeDislikeResponse> likeDislikeApi(
-      String userId, String type, String token, String likeUserName) async {
+    String userId,
+    String type,
+    String token,
+    String likeUserName,
+  ) async {
     try {
       print("$userId $type $token$likeUserName");
-      final response = await ApiService(token: token).sendRequest.post(UrlEndpoints.likeDislike, data: {
-        "liked_user_id": userId,
-        "type": type,
-        "liked_user_name": likeUserName
-      });
+      final response = await ApiService(token: token).sendRequest.post(
+        UrlEndpoints.likeDislike,
+        data: {
+          "liked_user_id": userId,
+          "type": type,
+          "liked_user_name": likeUserName,
+        },
+      );
       return LikeDislikeResponse.fromJson(response.data);
     } catch (e) {
       DioException error = e as DioException;
@@ -158,14 +172,16 @@ class HomeRepository {
     dio.options.headers['Authorization'] = 'Bearer $token';
 
     try {
-      final response = await dio.post(UrlEndpoints.addIntro,
-          data: {
-            "receiver_user_id": userId,
-            "message": introtext,
-          });
+      final response = await dio.post(
+        UrlEndpoints.addIntro,
+        data: {"receiver_user_id": userId, "message": introtext},
+      );
 
-      print(response.data['message'] + " hello $userId");  // Assuming 'message' is part of the response
-      return response.data['message'];  // Return the 'message' field from the response
+      print(
+        response.data['message'] + " hello $userId",
+      ); // Assuming 'message' is part of the response
+      return response
+          .data['message']; // Return the 'message' field from the response
     } on DioError catch (e) {
       print(e.response!.data.toString() + " response.data hello $userId");
       throw e.response!.data['message'];
@@ -214,6 +230,36 @@ class HomeRepository {
     }
   }
 
+  Future<String> getDeviceToken() async {
+    try {
+      final response = await FirebaseMessaging.instance.getToken();
+      return response ?? "no token";
+    } catch (e) {
+      return "no token";
+    }
+  }
+
+  Future<String> devicetoken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    var token = prefs.getString('token');
+    dio.options.headers['content-Type'] = 'application/json';
+    dio.options.headers['Authorization'] = 'Bearer $token';
+    final device_token = await getDeviceToken();
+    try {
+      final response = await dio.patch(
+        UrlEndpoints.deviceTokenUpdate,
+        data: {"device_token": device_token},
+      );
+
+      return "success";
+    } on DioError catch (e) {
+      throw e.response!.data['message'];
+    } catch (e) {
+      print("object error $e");
+      throw e.toString();
+    }
+  }
+
   /////////////////userdatabyidonly//////////////\
 
   Future<GetUserByUserIDModel> byid(String id) async {
@@ -247,7 +293,7 @@ class HomeRepository {
 
     try {
       final response = await dio.get("${UrlEndpoints.agreedisagree}$userId");
-     print("stayfocused");
+      print("stayfocused");
       print(response);
       return AgreeDisagreeResponse.fromJson(response.data);
     } on DioError catch (e) {
@@ -257,8 +303,7 @@ class HomeRepository {
     }
   }
 
-
-//////////////////get id by firebase token \\\\\\\\\\\\\\\
+  //////////////////get id by firebase token \\\\\\\\\\\\\\\
 
   Future<GetUserFireBaseId> byidFireBase(String id) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -289,9 +334,10 @@ class HomeRepository {
     dio.options.headers['content-Type'] = 'application/json';
     dio.options.headers['Authorization'] = 'Bearer $token';
     try {
-      final response = await dio.post(UrlEndpoints.updatedata, data: {
-        "is_online": bio,
-      });
+      final response = await dio.post(
+        UrlEndpoints.updatedata,
+        data: {"is_online": bio},
+      );
       return response.data['message'];
     } on DioError catch (e) {
       throw e.response!.data['message'];
@@ -306,32 +352,31 @@ class HomeRepository {
     log("📄 Page: $page, Limit: $limit");
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String token = prefs.getString('token') ?? "";
-    
+
     log("🔑 LIVE API TOKEN: $token");
     log("🔑 LIVE API TOKEN LENGTH: ${token.length}");
     log("🔑 LIVE API TOKEN IS EMPTY: ${token.isEmpty}");
-    log("🌐 Live API - Full URL: ${UrlEndpoints.baseUrl}${UrlEndpoints.Liveuser}?page=$page&limit=$limit");
+    log(
+      "🌐 Live API - Full URL: ${UrlEndpoints.baseUrl}${UrlEndpoints.Liveuser}?page=$page&limit=$limit",
+    );
 
     try {
       log("📡 Making API call to get live users with pagination...");
       final response = await ApiService(token: token).sendRequest.get(
         UrlEndpoints.Liveuser,
-        queryParameters: {
-          'page': page,
-          'limit': limit,
-        },
+        queryParameters: {'page': page, 'limit': limit},
       );
-      
+
       log("✅ Live API - Response received successfully");
       log("📊 Response status: ${response.statusCode}");
       log("📊 Response data type: ${response.data.runtimeType}");
       log("📊 Response data: ${response.data}");
-      
+
       log("🔄 Parsing response to LiveResponse...");
       final liveResponse = LiveResponse.fromJson(response.data);
       log("✅ Successfully parsed LiveResponse");
       log("📊 Parsed users count: ${liveResponse.result?.users?.length}");
-      
+
       return liveResponse;
     } catch (e) {
       log("❌ Live API - Exception caught: $e");
@@ -356,14 +401,16 @@ class HomeRepository {
     String token = prefs.getString('token') ?? "";
 
     try {
-      final response = await ApiService(token: token)
-          .sendRequest
-          .get(UrlEndpoints.allNotification);
+      final response = await ApiService(
+        token: token,
+      ).sendRequest.get(UrlEndpoints.allNotification);
 
       return NotificationResponse.fromJson(response.data);
     } catch (e) {
       if (e is DioException) {
-        log("${e.response?.data.toString()}  ${e.response?.statusCode.toString()}=======================++++++>");
+        log(
+          "${e.response?.data.toString()}  ${e.response?.statusCode.toString()}=======================++++++>",
+        );
         throw ApiErrorHandler.getErrorMessage(e);
       } else {
         log("$e=======================++++++>");
@@ -411,22 +458,23 @@ class HomeRepository {
     }
   }
 
-
   ////////////////////block and repot,spam///////////////
 
   Future<String> reportblock(
-      String userid, String type, String messages) async {
+    String userid,
+    String type,
+    String messages,
+  ) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     var token = prefs.getString('token');
     dio.options.headers['content-Type'] = 'application/json';
     dio.options.headers['Authorization'] = 'Bearer $token';
 
     try {
-      final response = await dio.post(UrlEndpoints.BLOCK, data: {
-        "opponent_user_id": userid,
-        "type": type,
-        "message": messages,
-      });
+      final response = await dio.post(
+        UrlEndpoints.BLOCK,
+        data: {"opponent_user_id": userid, "type": type, "message": messages},
+      );
       return response.data['message'];
     } on DioError catch (e) {
       throw e.response!.data['message'];
@@ -434,6 +482,4 @@ class HomeRepository {
       throw e.toString();
     }
   }
-
-
 }

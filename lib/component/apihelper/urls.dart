@@ -9,17 +9,18 @@ class UrlEndpoints {
 
   ////////////////////////AWS///////////////////////////////
 
-  static String baseUrl = "https://www.lempiredating.com/api/v1/";
+  // static String baseUrl = "https://www.lempiredating.com/api/v1/";
 
   ///////////////////KRISHAN/////////////////////////
- 
-  // static String baseUrl = "http://172.16.2.34:10061/api/v1/";
+
+  static String baseUrl = "https://3e8357cd803e.ngrok-free.app/api/v1/";
 
   ///////////////////shubham yadav/////////////////////////
 
   // static String baseUrl = "http://172.16.100.230:10061/api/v1/";
 
   static String login = "user/login-phone";
+  static String deviceTokenUpdate = "user/updateDeviceToken";
   static String verifyOtpWithPhone = "user/verification";
   static String createaccount = "user/set-profile";
   static String addphoto = "user/upload-media";

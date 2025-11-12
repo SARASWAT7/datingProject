@@ -26,28 +26,28 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../subscrption/subscription/cubit.dart';
 
-
 class HomePageCubit extends Cubit<HomePageState> {
   HomePageCubit() : super(const HomePageState());
   HomeRepository repo = HomeRepository();
   FastDataService fastDataService = FastDataService();
   final int pageLimit = 10; // Reduced from 20 to 10 for faster loading
-  
+
   @override
   Future<void> close() {
     // Clean up background timer when cubit is disposed
     stopBackgroundRefresh();
     return super.close();
   }
+
   Future<String> gettoken() async {
-  try {
-    String? token = await FCMTokenHelper.getTokenWithRetry();
-    return token ?? "token not found";
-  } catch (e) {
-    log("Error getting FCM token: $e");
-    return "token not found";
+    try {
+      String? token = await FCMTokenHelper.getTokenWithRetry();
+      return token ?? "token not found";
+    } catch (e) {
+      log("Error getting FCM token: $e");
+      return "token not found";
+    }
   }
-}
 
   /// Clear image cache to prevent old user images from showing
   Future<void> clearImageCache() async {
@@ -72,9 +72,19 @@ class HomePageCubit extends Cubit<HomePageState> {
   Future<void> manageCacheForNewUsers(HomeResponse response) async {
     try {
       // Get current user IDs and their images
-      final currentUserIds = response.result?.users?.map((user) => user.id).whereType<String>().toList() ?? [];
-      final newUserIds = response.result?.users?.map((user) => user.id).whereType<String>().toList() ?? [];
-      
+      final currentUserIds =
+          response.result?.users
+              ?.map((user) => user.id)
+              .whereType<String>()
+              .toList() ??
+          [];
+      final newUserIds =
+          response.result?.users
+              ?.map((user) => user.id)
+              .whereType<String>()
+              .toList() ??
+          [];
+
       // Create user image map for smart cache management
       final userImageMap = <String, List<String>>{};
       if (state.response?.result?.users != null) {
@@ -84,7 +94,7 @@ class HomePageCubit extends Cubit<HomePageState> {
           }
         }
       }
-      
+
       // Use smart cache manager
       await SmartCacheManager.manageCacheForNewUsers(
         currentUserIds: currentUserIds.whereType<String>().toList(),
@@ -97,51 +107,53 @@ class HomePageCubit extends Cubit<HomePageState> {
       log("❌ Error managing cache for new users: $e");
     }
   }
+
   Future<void> updateUserDatatoFirebase() async {
     try {
-String token = await gettoken();
+      String token = await gettoken();
       final getprofile = await CorettaUserProfileRepo().profile();
       final chatresponse = await CorettaChatRepository().registerUser(
-          FirebaseUserCreation(
-              email: getprofile.result?.email ?? "",
-              userId: getprofile.result?.firebaseId?.toInt() ?? 0,
-              name: getprofile.result?.firstName ?? "",
-              mobile: getprofile.result?.phone.toString() ?? "",
-              profilePic: getprofile.result?.profilePicture ?? "",
-              deviceToken: token));
-                    SharedPreferences preferences = await SharedPreferences.getInstance();
+        FirebaseUserCreation(
+          email: getprofile.result?.email ?? "",
+          userId: getprofile.result?.firebaseId?.toInt() ?? 0,
+          name: getprofile.result?.firstName ?? "",
+          mobile: getprofile.result?.phone.toString() ?? "",
+          profilePic: getprofile.result?.profilePicture ?? "",
+          deviceToken: token,
+        ),
+      );
+      SharedPreferences preferences = await SharedPreferences.getInstance();
 
+      preferences.setString(
+        "chatToken",
+        FirebaseUserCreation(
+          deviceToken: token,
+          email: getprofile.result?.email ?? "",
+          userId: getprofile.result?.firebaseId?.toInt() ?? 0,
+          name: getprofile.result?.firstName ?? "",
+          mobile: getprofile.result?.phone.toString() ?? "",
+          profilePic: getprofile.result?.profilePicture ?? "",
+        ).getBody(),
+      );
+      log(
+        "$chatresponse  ${FirebaseUserCreation(deviceToken: token, email: getprofile.result?.email ?? "", userId: getprofile.result?.firebaseId?.toInt() ?? 0, name: getprofile.result?.firstName ?? "", mobile: getprofile.result?.phone.toString() ?? "", profilePic: getprofile.result?.profilePicture ?? "").getBody()} ======++++++++++++++++>++++++++++++++SṢ",
+      );
 
-                 preferences.setString(
-          "chatToken",
-          FirebaseUserCreation(
-                  deviceToken: token,
-                  email: getprofile.result?.email ?? "",
-                  userId: getprofile.result?.firebaseId?.toInt() ?? 0,
-                  name: getprofile.result?.firstName ?? "",
-                  mobile: getprofile.result?.phone.toString() ?? "",
-                  profilePic: getprofile.result?.profilePicture ?? "")
-              .getBody());
-      log("$chatresponse  ${ FirebaseUserCreation(
-                  deviceToken: token,
-                  email: getprofile.result?.email ?? "",
-                  userId: getprofile.result?.firebaseId?.toInt() ?? 0,
-                  name: getprofile.result?.firstName ?? "",
-                  mobile: getprofile.result?.phone.toString() ?? "",
-                  profilePic: getprofile.result?.profilePicture ?? "")
-              .getBody()} ======++++++++++++++++>++++++++++++++SṢ");
- 
       await saveUserData(
-          getprofile.result?.profilePicture ?? "",
-          getprofile.result?.firebaseId?.toInt() ?? 0,
-          getprofile.result?.firstName ?? "");
+        getprofile.result?.profilePicture ?? "",
+        getprofile.result?.firebaseId?.toInt() ?? 0,
+        getprofile.result?.firstName ?? "",
+      );
     } catch (e) {
       log("${e} zssss");
     }
   }
 
-
-  Future<void> saveUserData(String profilePicture, int userId, String name) async {
+  Future<void> saveUserData(
+    String profilePicture,
+    int userId,
+    String name,
+  ) async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     await preferences.setString("profilePicture", profilePicture);
     await preferences.setInt("userId", userId);
@@ -154,52 +166,48 @@ String token = await gettoken();
     int userId = preferences.getInt("userId") ?? 0;
     String name = preferences.getString("name") ?? "";
 
-    return {
-      "profilePicture": profilePicture,
-      "userId": userId,
-      "name": name,
-    };
+    return {"profilePicture": profilePicture, "userId": userId, "name": name};
   }
-
 
   void homeApi(BuildContext context) async {
     emit(state.copyWith(status: ApiStates.loading));
-    
+
     // 🧹 CACHE MANAGEMENT: Clear old cache on fresh load
     await SmartCacheManager.clearOldCache();
-    
+
     // Reset pagination
-    emit(state.copyWith(
-      currentPage: 1,
-      hasMoreData: true,
-      isLoadingMore: false,
-    ));
-    
-    await InternetConnectivityService.executeWithConnectivityCheck(
-      context,
-      () async {
+    emit(
+      state.copyWith(currentPage: 1, hasMoreData: true, isLoadingMore: false),
+    );
+
+    await InternetConnectivityService.executeWithConnectivityCheck(context, () async {
       try {
         // Check cache first for instant loading
         try {
           final cachedData = await fastDataService.getCachedHomeData();
-          if (cachedData != null && cachedData.result?.users?.isNotEmpty == true) {
-            emit(state.copyWith(
-              status: ApiStates.success,
-              response: cachedData,
-              currentIndex: 0,
-              currentPage: 1,
-              hasMoreData: true,
-            ));
+          if (cachedData != null &&
+              cachedData.result?.users?.isNotEmpty == true) {
+            emit(
+              state.copyWith(
+                status: ApiStates.success,
+                response: cachedData,
+                currentIndex: 0,
+                currentPage: 1,
+                hasMoreData: true,
+              ),
+            );
 
             // Preload next user images from cached data
             _preloadNextUserImages(0);
 
             // CRITICAL: Ensure Firebase ID is saved even when using cached data
-            updateUserDatatoFirebase().then((_) {
-              log("✅ Firebase ID saved from cached data path");
-            }).catchError((e) {
-              log("⚠️ Error saving Firebase ID from cached path: $e");
-            });
+            updateUserDatatoFirebase()
+                .then((_) {
+                  log("✅ Firebase ID saved from cached data path");
+                })
+                .catchError((e) {
+                  log("⚠️ Error saving Firebase ID from cached path: $e");
+                });
 
             // Proactively load more users to prevent "no users found"
             Future.delayed(Duration(seconds: 2), () {
@@ -218,174 +226,196 @@ String token = await gettoken();
           fastDataService.clearAllCaches();
           // Continue with fresh data fetch
         }
-          
-            // Try fast data service first with retry logic
-            HomeResponse? response;
-            try {
-              response = await fastDataService.getHomeData();
-            } catch (fastDataError) {
-              // Check if it's an unauthorized error
-              if (fastDataError.toString().contains('401') || 
-                  fastDataError.toString().contains('unAuthorized') ||
-                  fastDataError.toString().contains('unauthorized')) {
-                // Wait a bit and try again
-                await Future.delayed(Duration(seconds: 1));
-              }
 
-              // Fallback to direct repository call
+        // Try fast data service first with retry logic
+        HomeResponse? response;
+        try {
+          response = await fastDataService.getHomeData();
+        } catch (fastDataError) {
+          // Check if it's an unauthorized error
+          if (fastDataError.toString().contains('401') ||
+              fastDataError.toString().contains('unAuthorized') ||
+              fastDataError.toString().contains('unauthorized')) {
+            // Wait a bit and try again
+            await Future.delayed(Duration(seconds: 1));
+          }
+
+          // Fallback to direct repository call
+          try {
+            final homeRepo = HomeRepository();
+            response = await homeRepo.homePageApi(
+              page: state.currentPage,
+              limit: pageLimit,
+            );
+          } catch (repoError) {
+            // If it's still unauthorized, try one more time with delay
+            if (repoError.toString().contains('401') ||
+                repoError.toString().contains('unAuthorized') ||
+                repoError.toString().contains('unauthorized')) {
+              await Future.delayed(Duration(seconds: 2));
+
               try {
                 final homeRepo = HomeRepository();
-                response = await homeRepo.homePageApi(page: state.currentPage, limit: pageLimit);
-              } catch (repoError) {
-                // If it's still unauthorized, try one more time with delay
-                if (repoError.toString().contains('401') || 
-                    repoError.toString().contains('unAuthorized') ||
-                    repoError.toString().contains('unauthorized')) {
-                  await Future.delayed(Duration(seconds: 2));
-                  
-                  try {
-                    final homeRepo = HomeRepository();
-                    response = await homeRepo.homePageApi(page: state.currentPage, limit: pageLimit);
-                  } catch (finalError) {
-                    throw finalError;
-                  }
-                } else {
-                  throw repoError;
-                }
+                response = await homeRepo.homePageApi(
+                  page: state.currentPage,
+                  limit: pageLimit,
+                );
+              } catch (finalError) {
+                throw finalError;
               }
-            }
-          
-          // Validate response before proceeding
-          if (response.result?.users == null || response.result!.users!.isEmpty) {
-            // Don't show error immediately - this might be a temporary state
-            // Set hasMoreData to true to allow retries and show background message
-            emit(state.copyWith(
-              status: ApiStates.success, 
-              hasMoreData: true,
-              response: response,
-            ));
-            log("⚠️ No users in current batch - will retry later");
-            return;
-          }
-
-          // 🧹 CACHE MANAGEMENT: Clear old user images to prevent showing wrong users
-          await manageCacheForNewUsers(response);
-          
-          // CRITICAL: Ensure Firebase ID is saved before any group/chat operations
-          // Run updateUserDatatoFirebase first to save Firebase ID from profile API
-          try {
-            await updateUserDatatoFirebase();
-            log("✅ Firebase ID saved successfully from profile API");
-          } catch (e) {
-            log("⚠️ Error saving Firebase ID: $e");
-            // Continue even if Firebase update fails
-          }
-          
-          // Run other background operations in parallel (don't block UI)
-          Future.wait([
-            _getSubscriptionData(context).catchError((e) {}),
-          ]);
-          
-          // Advanced preloading for next users (with memory optimization)
-          if (response.result?.users?.isNotEmpty == true) {
-            try {
-              // Preload first 3 users' images for ultra-smooth experience
-              for (int i = 0; i < 3 && i < response.result!.users!.length; i++) {
-                final user = response.result!.users![i];
-                if (user.media?.isNotEmpty == true) {
-                  // Limit media preloading to first 3 images per user to save memory
-                  final limitedMedia = user.media!.take(3).toList();
-                  AdvancedPerformanceOptimizer.preloadImagesBatch(limitedMedia);
-                }
-              }
-
-              // Preload next user data for instant transitions (limit to first 5 users)
-              final limitedUsers = response.result!.users!.take(5).toList();
-              AdvancedPerformanceOptimizer.preloadNextUserData(limitedUsers, 0);
-            } catch (preloadError) {
-              // Don't fail the entire request if preloading fails
-            }
-          }
-          
-          // Check if we have more data
-          final usersCount = response.result?.users?.length ?? 0;
-          // Always assume there might be more data unless we explicitly know there isn't
-          // This allows the app to continue checking for new users
-          final hasMoreData = true; // Always true to allow continuous checking for new users
-          
-          // Emit success state with error handling
-          try {
-            emit(state.copyWith(
-              status: ApiStates.success,
-              response: response,
-              currentIndex: 0,
-              currentPage: 1,
-              hasMoreData: hasMoreData,
-            ));
-          } catch (emitError) {
-            // Try to emit a minimal success state
-            emit(state.copyWith(
-              status: ApiStates.success,
-              response: response,
-              currentIndex: 0,
-              currentPage: 1,
-              hasMoreData: hasMoreData,
-            ));
-          }
-
-          // Proactively load more users to prevent "no users found"
-          Future.delayed(Duration(seconds: 3), () {
-            if (state.hasMoreData && !state.isLoadingMore) {
-              log("🔄 Proactively loading more users after fresh data load...");
-              loadMoreUsers();
-            }
-          });
-        } catch (e) {
-          log("Home cubit error: $e");
-          
-          // Record error to crashlytics
-          CrashHandler.recordError(e, null);
-          
-          emit(state.copyWith(status: ApiStates.error));
-          
-          // Handle different types of errors
-          if (e.toString().contains('Session expired') || 
-              e.toString().contains('Authentication failed') ||
-              e.toString().contains('401')) {
-            // Handle authentication errors
-            if (context.mounted) {
-              NormalMessage().normalerrorstate(context, "Session expired. Please login again.");
-            }
-          } else if (e.toString().contains('Connection lost') ||
-                     e.toString().contains('Connection closed') ||
-                     e.toString().contains('SocketException') || 
-                     e.toString().contains('HandshakeException') ||
-                     e.toString().contains('TimeoutException')) {
-            // Handle network connectivity issues
-            InternetConnectivityService.handleNetworkError(context, e);
-          } else if (e.toString().contains('Server error') ||
-                     e.toString().contains('500') ||
-                     e.toString().contains('502') ||
-                     e.toString().contains('503')) {
-            // Handle server errors
-            if (context.mounted) {
-              NormalMessage().normalerrorstate(context, "Server error. Please try again later.");
-            }
-          } else if (e.toString().contains('No data received') ||
-                     e.toString().contains('Invalid response format')) {
-            // Handle data parsing issues
-            if (context.mounted) {
-              NormalMessage().normalerrorstate(context, "Data loading error. Please try again.");
-            }
-          } else {
-            // For other errors, show a generic error message
-            if (context.mounted) {
-              NormalMessage().normalerrorstate(context, "Failed to load data. Please try again.");
+            } else {
+              throw repoError;
             }
           }
         }
-      },
-    );
+
+        // Validate response before proceeding
+        if (response.result?.users == null || response.result!.users!.isEmpty) {
+          // Don't show error immediately - this might be a temporary state
+          // Set hasMoreData to true to allow retries and show background message
+          emit(
+            state.copyWith(
+              status: ApiStates.success,
+              hasMoreData: true,
+              response: response,
+            ),
+          );
+          log("⚠️ No users in current batch - will retry later");
+          return;
+        }
+
+        // 🧹 CACHE MANAGEMENT: Clear old user images to prevent showing wrong users
+        await manageCacheForNewUsers(response);
+
+        // CRITICAL: Ensure Firebase ID is saved before any group/chat operations
+        // Run updateUserDatatoFirebase first to save Firebase ID from profile API
+        try {
+          await updateUserDatatoFirebase();
+          log("✅ Firebase ID saved successfully from profile API");
+        } catch (e) {
+          log("⚠️ Error saving Firebase ID: $e");
+          // Continue even if Firebase update fails
+        }
+
+        // Run other background operations in parallel (don't block UI)
+        Future.wait([_getSubscriptionData(context).catchError((e) {})]);
+
+        // Advanced preloading for next users (with memory optimization)
+        if (response.result?.users?.isNotEmpty == true) {
+          try {
+            // Preload first 3 users' images for ultra-smooth experience
+            for (int i = 0; i < 3 && i < response.result!.users!.length; i++) {
+              final user = response.result!.users![i];
+              if (user.media?.isNotEmpty == true) {
+                // Limit media preloading to first 3 images per user to save memory
+                final limitedMedia = user.media!.take(3).toList();
+                AdvancedPerformanceOptimizer.preloadImagesBatch(limitedMedia);
+              }
+            }
+
+            // Preload next user data for instant transitions (limit to first 5 users)
+            final limitedUsers = response.result!.users!.take(5).toList();
+            AdvancedPerformanceOptimizer.preloadNextUserData(limitedUsers, 0);
+          } catch (preloadError) {
+            // Don't fail the entire request if preloading fails
+          }
+        }
+
+        // Check if we have more data
+        final usersCount = response.result?.users?.length ?? 0;
+        // Always assume there might be more data unless we explicitly know there isn't
+        // This allows the app to continue checking for new users
+        final hasMoreData =
+            true; // Always true to allow continuous checking for new users
+
+        // Emit success state with error handling
+        try {
+          emit(
+            state.copyWith(
+              status: ApiStates.success,
+              response: response,
+              currentIndex: 0,
+              currentPage: 1,
+              hasMoreData: hasMoreData,
+            ),
+          );
+        } catch (emitError) {
+          // Try to emit a minimal success state
+          emit(
+            state.copyWith(
+              status: ApiStates.success,
+              response: response,
+              currentIndex: 0,
+              currentPage: 1,
+              hasMoreData: hasMoreData,
+            ),
+          );
+        }
+
+        // Proactively load more users to prevent "no users found"
+        Future.delayed(Duration(seconds: 3), () {
+          if (state.hasMoreData && !state.isLoadingMore) {
+            log("🔄 Proactively loading more users after fresh data load...");
+            loadMoreUsers();
+          }
+        });
+      } catch (e) {
+        log("Home cubit error: $e");
+
+        // Record error to crashlytics
+        CrashHandler.recordError(e, null);
+
+        emit(state.copyWith(status: ApiStates.error));
+
+        // Handle different types of errors
+        if (e.toString().contains('Session expired') ||
+            e.toString().contains('Authentication failed') ||
+            e.toString().contains('401')) {
+          // Handle authentication errors
+          if (context.mounted) {
+            NormalMessage().normalerrorstate(
+              context,
+              "Session expired. Please login again.",
+            );
+          }
+        } else if (e.toString().contains('Connection lost') ||
+            e.toString().contains('Connection closed') ||
+            e.toString().contains('SocketException') ||
+            e.toString().contains('HandshakeException') ||
+            e.toString().contains('TimeoutException')) {
+          // Handle network connectivity issues
+          InternetConnectivityService.handleNetworkError(context, e);
+        } else if (e.toString().contains('Server error') ||
+            e.toString().contains('500') ||
+            e.toString().contains('502') ||
+            e.toString().contains('503')) {
+          // Handle server errors
+          if (context.mounted) {
+            NormalMessage().normalerrorstate(
+              context,
+              "Server error. Please try again later.",
+            );
+          }
+        } else if (e.toString().contains('No data received') ||
+            e.toString().contains('Invalid response format')) {
+          // Handle data parsing issues
+          if (context.mounted) {
+            NormalMessage().normalerrorstate(
+              context,
+              "Data loading error. Please try again.",
+            );
+          }
+        } else {
+          // For other errors, show a generic error message
+          if (context.mounted) {
+            NormalMessage().normalerrorstate(
+              context,
+              "Failed to load data. Please try again.",
+            );
+          }
+        }
+      }
+    });
   }
 
   // Background data refresh without blocking UI
@@ -393,16 +423,21 @@ String token = await gettoken();
     try {
       log("🔄 Refreshing data in background...");
       final homeRepo = HomeRepository();
-      final response = await homeRepo.homePageApi(page: state.currentPage, limit: pageLimit);
-      
+      final response = await homeRepo.homePageApi(
+        page: state.currentPage,
+        limit: pageLimit,
+      );
+
       if (response.result?.users?.isNotEmpty == true) {
         log("✅ Background refresh successful");
         // Update state with fresh data
-        emit(state.copyWith(
-          status: ApiStates.success,
-          response: response,
-          currentIndex: state.currentIndex
-        ));
+        emit(
+          state.copyWith(
+            status: ApiStates.success,
+            response: response,
+            currentIndex: state.currentIndex,
+          ),
+        );
       }
     } catch (e) {
       log("❌ Background refresh failed: $e");
@@ -424,7 +459,7 @@ String token = await gettoken();
     try {
       final users = state.response?.result?.users ?? [];
       final nextIndex = currentIndex + 1;
-      
+
       if (nextIndex < users.length) {
         final nextUser = users[nextIndex];
         if (nextUser.media?.isNotEmpty == true) {
@@ -439,72 +474,85 @@ String token = await gettoken();
   // Load more users when reaching the 9th user
   void loadMoreUsers() async {
     if (state.isLoadingMore || !state.hasMoreData) {
-      log("🚫 Skipping load more - isLoadingMore: ${state.isLoadingMore}, hasMoreData: ${state.hasMoreData}");
+      log(
+        "🚫 Skipping load more - isLoadingMore: ${state.isLoadingMore}, hasMoreData: ${state.hasMoreData}",
+      );
       return;
     }
-    
+
     try {
       emit(state.copyWith(isLoadingMore: true));
       final nextPage = state.currentPage + 1;
-      
+
       log("📡 Loading more users - page $nextPage");
       final response = await repo.homePageApi(page: nextPage, limit: pageLimit);
-      
+
       // 🧹 CACHE MANAGEMENT: Clear old user images when loading new users
       await manageCacheForNewUsers(response);
-      
+
       final newUsers = response.result?.users ?? [];
       final currentUsers = state.response?.result?.users ?? [];
-      
-      log("📊 New users received: ${newUsers.length}, Current users: ${currentUsers.length}");
-      
+
+      log(
+        "📊 New users received: ${newUsers.length}, Current users: ${currentUsers.length}",
+      );
+
       // Combine existing users with new users
       final combinedUsers = [...currentUsers, ...newUsers];
-      
+
       // Always assume there might be more data to allow continuous checking
       final hasMoreData = true;
-      
-      log("📊 Combined users: ${combinedUsers.length}, Has more data: $hasMoreData");
-      
+
+      log(
+        "📊 Combined users: ${combinedUsers.length}, Has more data: $hasMoreData",
+      );
+
       // Create updated response with combined users
       final updatedResponse = HomeResponse(
         success: response.success,
         message: response.message,
-        result: Result(
-          success: response.result?.success,
-          users: combinedUsers,
+        result: Result(success: response.result?.success, users: combinedUsers),
+      );
+
+      log(
+        "✅ Loaded ${newUsers.length} more users. Total: ${combinedUsers.length}",
+      );
+
+      // Update the current index if we were at -1 (end of users)
+      final updatedCurrentIndex = state.currentIndex == -1
+          ? 0
+          : state.currentIndex;
+
+      emit(
+        state.copyWith(
+          status: ApiStates.success,
+          response: updatedResponse,
+          currentPage: nextPage,
+          hasMoreData: hasMoreData,
+          isLoadingMore: false,
+          currentIndex: updatedCurrentIndex,
         ),
       );
-      
-      log("✅ Loaded ${newUsers.length} more users. Total: ${combinedUsers.length}");
-      
-      // Update the current index if we were at -1 (end of users)
-      final updatedCurrentIndex = state.currentIndex == -1 ? 0 : state.currentIndex;
-      
-      emit(state.copyWith(
-        status: ApiStates.success,
-        response: updatedResponse,
-        currentPage: nextPage,
-        hasMoreData: hasMoreData,
-        isLoadingMore: false,
-        currentIndex: updatedCurrentIndex,
-      ));
-      
-      log("🔄 Updated current index from ${state.currentIndex} to $updatedCurrentIndex");
-      log("📊 New total users: ${combinedUsers.length}, Has more data: $hasMoreData");
-      
+
+      log(
+        "🔄 Updated current index from ${state.currentIndex} to $updatedCurrentIndex",
+      );
+      log(
+        "📊 New total users: ${combinedUsers.length}, Has more data: $hasMoreData",
+      );
+
       // REMOVED: Auto-triggering next page load to prevent infinite API calls
       // This was causing continuous API hits on every 9th user
       // Users will be loaded on-demand when needed instead
     } catch (e) {
       log("❌ Error loading more users: $e");
       log("❌ Error type: ${e.runtimeType}");
-      
+
       // Don't set hasMoreData to false immediately - retry once
       emit(state.copyWith(isLoadingMore: false));
-      
+
       // Retry after a short delay if it's a network error
-      if (e.toString().contains('Connection') || 
+      if (e.toString().contains('Connection') ||
           e.toString().contains('timeout') ||
           e.toString().contains('SocketException')) {
         log("🔄 Retrying load more users after network error...");
@@ -521,22 +569,26 @@ String token = await gettoken();
   void checkAndLoadMoreUsers() {
     final currentIndex = state.currentIndex;
     final totalUsers = state.response?.result?.users?.length ?? 0;
-    
-    log("🔍 Checking pagination - Current index: $currentIndex, Total users: $totalUsers, Has more data: ${state.hasMoreData}, Is loading: ${state.isLoadingMore}");
-    
+
+    log(
+      "🔍 Checking pagination - Current index: $currentIndex, Total users: $totalUsers, Has more data: ${state.hasMoreData}, Is loading: ${state.isLoadingMore}",
+    );
+
     // OPTIMIZED: Only load more when we're actually near the end (within 1 user of the end)
     // This prevents continuous API calls on every 9th user
-    if (currentIndex >= totalUsers - 1 && 
-        state.hasMoreData && 
+    if (currentIndex >= totalUsers - 1 &&
+        state.hasMoreData &&
         !state.isLoadingMore) {
-      log("🔄 Triggering load more users - Current index: $currentIndex, Total: $totalUsers");
+      log(
+        "🔄 Triggering load more users - Current index: $currentIndex, Total: $totalUsers",
+      );
       loadMoreUsers();
     }
   }
 
   void filter(BuildContext context, Map<String, dynamic> data) async {
     emit(state.copyWith(status: ApiStates.loading));
-    
+
     await InternetConnectivityService.executeWithConnectivityCheck(
       context,
       () async {
@@ -556,8 +608,13 @@ String token = await gettoken();
 
           final response = await repo.filter(setting);
 
-          emit(state.copyWith(
-              status: ApiStates.success, response: response, currentIndex: 2));
+          emit(
+            state.copyWith(
+              status: ApiStates.success,
+              response: response,
+              currentIndex: 2,
+            ),
+          );
         } catch (e) {
           log("${e} zssss");
           emit(state.copyWith(status: ApiStates.error));
@@ -580,7 +637,9 @@ String token = await gettoken();
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String token = prefs.getString('token') ?? "";
-      log("🔑 Auth token retrieved: ${token.isNotEmpty ? 'Present' : 'Missing'}");
+      log(
+        "🔑 Auth token retrieved: ${token.isNotEmpty ? 'Present' : 'Missing'}",
+      );
       return token;
     } catch (e) {
       log("❌ Error retrieving auth token: $e");
@@ -606,7 +665,10 @@ String token = await gettoken();
       token = await getAuthToken();
       if (token.isEmpty) {
         log("❌ Still no token available, cannot perform like/dislike");
-        NormalMessage.instance.normalerrorstate(context, "Authentication token is missing. Please login again.");
+        NormalMessage.instance.normalerrorstate(
+          context,
+          "Authentication token is missing. Please login again.",
+        );
         return;
       }
     }
@@ -619,11 +681,15 @@ String token = await gettoken();
 
     // Check if we're at the last user BEFORE updating the state
     final isAtLastUser = state.currentIndex >= currentUsers.length - 1;
-    final isNearEnd = state.currentIndex >= currentUsers.length - 3; // Within 3 users of the end
+    final isNearEnd =
+        state.currentIndex >=
+        currentUsers.length - 3; // Within 3 users of the end
     final hasMoreData = state.hasMoreData;
     final isLoadingMore = state.isLoadingMore;
 
-    log("🔍 Like/Dislike - Current index: ${state.currentIndex}, Total users: ${currentUsers.length}, Is at last user: $isAtLastUser, Is near end: $isNearEnd, Has more data: $hasMoreData, Is loading: $isLoadingMore");
+    log(
+      "🔍 Like/Dislike - Current index: ${state.currentIndex}, Total users: ${currentUsers.length}, Is at last user: $isAtLastUser, Is near end: $isNearEnd, Has more data: $hasMoreData, Is loading: $isLoadingMore",
+    );
 
     // Simple cache clearing - no complex error handling
     try {
@@ -639,10 +705,7 @@ String token = await gettoken();
     }
 
     // Move to next user instantly (optimistic UI)
-    emit(state.copyWith(
-      status: ApiStates.success,
-      currentIndex: nextIndex,
-    ));
+    emit(state.copyWith(status: ApiStates.success, currentIndex: nextIndex));
 
     // Preload next user's images immediately
     if (nextIndex >= 0) {
@@ -680,25 +743,37 @@ String token = await gettoken();
 
   /// Background like/dislike API call
   Future<void> _performLikeDislikeInBackground(
-    BuildContext context, 
-    String userId, 
+    BuildContext context,
+    String userId,
     String type,
-    String token, 
-    String likeuserName, 
-    int nextIndex,
-    {String? otherFirebaseId, String? otherDisplayName, String? otherProfileImage}
-  ) async {
+    String token,
+    String likeuserName,
+    int nextIndex, {
+    String? otherFirebaseId,
+    String? otherDisplayName,
+    String? otherProfileImage,
+  }) async {
     try {
       // Validate token before making API call
       if (token.isEmpty) {
         log("❌ Token is empty, cannot perform like/dislike action");
-        NormalMessage.instance.normalerrorstate(context, "Authentication token is missing. Please login again.");
+        NormalMessage.instance.normalerrorstate(
+          context,
+          "Authentication token is missing. Please login again.",
+        );
         return;
       }
 
-      log("🔑 Like/Dislike API - Token: ${token.isNotEmpty ? 'Present' : 'Missing'}, User: $likeuserName, Type: $type");
-      
-      final response = await repo.likeDislikeApi(userId, type, token, likeuserName);
+      log(
+        "🔑 Like/Dislike API - Token: ${token.isNotEmpty ? 'Present' : 'Missing'}, User: $likeuserName, Type: $type",
+      );
+
+      final response = await repo.likeDislikeApi(
+        userId,
+        type,
+        token,
+        likeuserName,
+      );
 
       // Check if user matched
       if ((response.result?.isMatched ?? false) == true) {
@@ -720,25 +795,36 @@ String token = await gettoken();
       final errorText = e.toString().toLowerCase();
       if (errorText.contains('already a match')) {
         // Directly open chat with this user for a smooth dating flow
-        await _openChatWithUser(
-          otherFirebaseId ?? userId,
-          otherDisplayName ?? likeuserName,
-          otherImageOverride: otherProfileImage,
-        );
+        // await _openChatWithUser(
+        //   otherFirebaseId ?? userId,
+        //   otherDisplayName ?? likeuserName,
+        //   otherImageOverride: otherProfileImage,
+        // );
         // Do not treat as failure; simply return
         return;
       }
-      
+
       // Handle specific error types
-      if (e.toString().contains('401') || e.toString().contains('Unauthorized')) {
+      if (e.toString().contains('401') ||
+          e.toString().contains('Unauthorized')) {
         log("🔑 Authentication error - token may be invalid or expired");
-        NormalMessage.instance.normalerrorstate(context, "Authentication failed. Please login again.");
-      } else if (e.toString().contains('403') || e.toString().contains('Forbidden')) {
+        NormalMessage.instance.normalerrorstate(
+          context,
+          "Authentication failed. Please login again.",
+        );
+      } else if (e.toString().contains('403') ||
+          e.toString().contains('Forbidden')) {
         log("🚫 Access forbidden - user may not have permission");
-        NormalMessage.instance.normalerrorstate(context, "Access denied. Please check your account status.");
+        NormalMessage.instance.normalerrorstate(
+          context,
+          "Access denied. Please check your account status.",
+        );
       } else {
         // Generic error message
-        NormalMessage.instance.normalerrorstate(context, "Failed to perform action. Please try again.");
+        NormalMessage.instance.normalerrorstate(
+          context,
+          "Failed to perform action. Please try again.",
+        );
       }
     }
   }
@@ -805,8 +891,10 @@ String token = await gettoken();
   /// Method to handle when user reaches the end of the list
   void onReachedEnd() {
     log("🔚 User reached end of list - checking for more data...");
-    log("🔚 Current state - hasMoreData: ${state.hasMoreData}, isLoadingMore: ${state.isLoadingMore}");
-    
+    log(
+      "🔚 Current state - hasMoreData: ${state.hasMoreData}, isLoadingMore: ${state.isLoadingMore}",
+    );
+
     if (state.hasMoreData && !state.isLoadingMore) {
       log("🔄 Triggering load more from end of list...");
       loadMoreUsers();
@@ -820,8 +908,10 @@ String token = await gettoken();
   /// Method to handle when user likes/dislikes the last user in current batch
   void handleLastUserAction() {
     log("🔚 Last user action detected - checking for more data...");
-    log("🔚 Current state - hasMoreData: ${state.hasMoreData}, isLoadingMore: ${state.isLoadingMore}");
-    
+    log(
+      "🔚 Current state - hasMoreData: ${state.hasMoreData}, isLoadingMore: ${state.isLoadingMore}",
+    );
+
     if (state.hasMoreData && !state.isLoadingMore) {
       log("🔄 Triggering load more after last user action...");
       loadMoreUsers();
@@ -836,24 +926,28 @@ String token = await gettoken();
   void proactiveLoadMoreUsers() {
     final currentIndex = state.currentIndex;
     final totalUsers = state.response?.result?.users?.length ?? 0;
-    
-    log("🔮 Proactive loading check - Current index: $currentIndex, Total users: $totalUsers");
-    
+
+    log(
+      "🔮 Proactive loading check - Current index: $currentIndex, Total users: $totalUsers",
+    );
+
     // OPTIMIZED: Only load more when user is at the last user to prevent continuous API calls
     // This prevents the issue where API was called on every 9th user
-    if (currentIndex >= totalUsers - 1 && state.hasMoreData && !state.isLoadingMore) {
+    if (currentIndex >= totalUsers - 1 &&
+        state.hasMoreData &&
+        !state.isLoadingMore) {
       log("🔮 Proactively loading more users to prevent 'no users found'...");
       loadMoreUsers();
     }
   }
 
   Timer? _backgroundTimer;
-  
+
   /// Start periodic background refresh to check for new users (PRODUCTION SAFE)
   void startBackgroundRefresh() {
     // Cancel any existing timer first
     _backgroundTimer?.cancel();
-    
+
     // Check for new users every 60 seconds (reduced frequency for production)
     _backgroundTimer = Timer.periodic(Duration(seconds: 60), (timer) {
       // Only run if app is in foreground and no users available
@@ -867,7 +961,7 @@ String token = await gettoken();
       }
     });
   }
-  
+
   /// Stop background refresh timer
   void stopBackgroundRefresh() {
     _backgroundTimer?.cancel();
@@ -876,7 +970,7 @@ String token = await gettoken();
 
   int _backgroundRefreshAttempts = 0;
   static const int _maxBackgroundRefreshAttempts = 5;
-  
+
   /// Background refresh without context dependency (PRODUCTION SAFE)
   void _backgroundRefresh() async {
     try {
@@ -886,25 +980,32 @@ String token = await gettoken();
         stopBackgroundRefresh();
         return;
       }
-      
+
       _backgroundRefreshAttempts++;
-      log("🔄 Background refresh attempt $_backgroundRefreshAttempts/$_maxBackgroundRefreshAttempts");
-      
+      log(
+        "🔄 Background refresh attempt $_backgroundRefreshAttempts/$_maxBackgroundRefreshAttempts",
+      );
+
       final repo = HomeRepository();
       final response = await repo.homePageApi(page: 1, limit: pageLimit);
-      
-      if (response.result?.users != null && response.result!.users!.isNotEmpty) {
+
+      if (response.result?.users != null &&
+          response.result!.users!.isNotEmpty) {
         // Reset attempts counter on success
         _backgroundRefreshAttempts = 0;
-        
+
         // Update state with new users
-        emit(state.copyWith(
-          status: ApiStates.success,
-          response: response,
-          hasMoreData: true,
-        ));
-        log("🔄 Background refresh: Found ${response.result!.users!.length} new users!");
-        
+        emit(
+          state.copyWith(
+            status: ApiStates.success,
+            response: response,
+            hasMoreData: true,
+          ),
+        );
+        log(
+          "🔄 Background refresh: Found ${response.result!.users!.length} new users!",
+        );
+
         // Stop background refresh since we found users
         stopBackgroundRefresh();
       } else {
@@ -912,9 +1013,10 @@ String token = await gettoken();
       }
     } catch (e) {
       log("🔄 Background refresh error: $e");
-      
+
       // If it's a network error, wait longer before next attempt
-      if (e.toString().contains('Connection') || e.toString().contains('timeout')) {
+      if (e.toString().contains('Connection') ||
+          e.toString().contains('timeout')) {
         log("🔄 Network error detected, waiting 2 minutes before next attempt");
         await Future.delayed(Duration(minutes: 2));
       }
@@ -925,22 +1027,22 @@ String token = await gettoken();
   void handleEndOfUsers() {
     final currentIndex = state.currentIndex;
     final totalUsers = state.response?.result?.users?.length ?? 0;
-    
-    log("🔚 End of users reached - Current index: $currentIndex, Total users: $totalUsers");
-    log("🔚 Has more data: ${state.hasMoreData}, Is loading: ${state.isLoadingMore}");
-    
+
+    log(
+      "🔚 End of users reached - Current index: $currentIndex, Total users: $totalUsers",
+    );
+    log(
+      "🔚 Has more data: ${state.hasMoreData}, Is loading: ${state.isLoadingMore}",
+    );
+
     // If we're at the end and have more data, try to load more
-    if (currentIndex >= totalUsers - 1 && state.hasMoreData && !state.isLoadingMore) {
+    if (currentIndex >= totalUsers - 1 &&
+        state.hasMoreData &&
+        !state.isLoadingMore) {
       log("🔄 At end but have more data, loading more users...");
       loadMoreUsers();
     } else if (currentIndex >= totalUsers - 1 && !state.hasMoreData) {
       log("🔚 Truly at end - no more data available");
     }
   }
-
-
-
-
-
-
 }

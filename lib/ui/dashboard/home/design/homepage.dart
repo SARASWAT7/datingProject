@@ -65,7 +65,8 @@ class _HomePageState extends State<HomePage> {
               child: SafeArea(
                 child: Column(
                   children: [
-                    if (state.currentIndex >=
+                    if (state.currentIndex < 0 ||
+                        state.currentIndex >=
                         state.response!.result!.users!.length)
                       Column(
                         children: [
@@ -130,7 +131,8 @@ class _HomePageState extends State<HomePage> {
                             child: child,
                           );
                         },
-                        child: state.currentIndex < state.response!.result!.users!.length
+                        child: state.currentIndex >= 0 && 
+                               state.currentIndex < state.response!.result!.users!.length
                             ? HomeApiData(
                                 key: ValueKey(state.currentIndex),
                                 index: state.currentIndex,

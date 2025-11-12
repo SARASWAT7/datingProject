@@ -25,7 +25,7 @@ android {
 
     defaultConfig {
         applicationId "com.dating.corretta"
-        minSdkVersion 23   // required by google_api_headers
+        minSdkVersion flutter.minSdkVersion   // required by google_api_headers
         targetSdkVersion 36
         versionCode 65
 
