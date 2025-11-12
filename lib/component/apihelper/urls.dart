@@ -9,11 +9,11 @@ class UrlEndpoints {
 
   ////////////////////////AWS///////////////////////////////
 
-  // static String baseUrl = "https://www.lempiredating.com/api/v1/";
+  static String baseUrl = "https://www.lempiredating.com/api/v1/";
 
   ///////////////////KRISHAN/////////////////////////
 
-  static String baseUrl = "https://3e8357cd803e.ngrok-free.app/api/v1/";
+  // static String baseUrl = "https://3e8357cd803e.ngrok-free.app/api/v1/";
 
   ///////////////////shubham yadav/////////////////////////
 
