@@ -7,8 +7,7 @@
 // import 'package:demoproject/ui/dashboard/likes/cubit/likedyoustate.dart';
 // import 'package:flutter/material.dart';
 // import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-// import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+// // import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 // import 'package:shared_preferences/shared_preferences.dart';
 // import 'package:sizer/sizer.dart';
 // import 'package:velocity_x/velocity_x.dart';
@@ -249,7 +248,6 @@ import 'package:demoproject/ui/dashboard/likes/cubit/likedyoucubit.dart';
 import 'package:demoproject/ui/dashboard/likes/cubit/likedyoustate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';
@@ -279,7 +277,7 @@ class _LikesyouState extends State<Likesyou> {
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
     BlocProvider.of<LikedYouCubit>(context).likedyou(context);
-    // checkPlan();  // Check the plan type when the page loads
+    checkPlan();  // Check the plan type when the page loads
   }
 
   @override
@@ -300,11 +298,13 @@ class _LikesyouState extends State<Likesyou> {
 
   // Function to check the user's plan - DISABLED FOR ALL USERS
   Future<void> checkPlan() async {
+    print("🔍 checkPlan() called - setting shouldShowContent to true");
     // DISABLED: All users can access likes without subscription
     setState(() {
       shouldShowContent = true;
       isBlurred = false;  // Remove the blur for all users
     });
+    print("🔍 checkPlan() completed - shouldShowContent: $shouldShowContent");
   }
 
   Future<String?> getToken() async {
@@ -312,15 +312,32 @@ class _LikesyouState extends State<Likesyou> {
     return prefs.getString('token');
   }
 
-  Future<void> _likeUser(String id, String userName) async {
+  Future<void> _likeUser(
+    String id,
+    String userName, {
+    String? otherFirebaseId,
+    String? otherDisplayName,
+    String? otherProfileImage,
+  }) async {
     final token = await getToken();
     if (token != null) {
+      // Debug: verify parameters being sent to likeSidlike
+      print("❤️ Like tap → sending params:");
+      print("  userId (backend): $id");
+      print("  userName: $userName");
+      print("  token present: ${token.isNotEmpty}");
+      print("  otherFirebaseId: ${otherFirebaseId ?? 'null'}");
+      print("  otherDisplayName: ${otherDisplayName ?? 'null'}");
+      print("  otherProfileImage: ${otherProfileImage ?? 'null'}");
       context.read<HomePageCubit>().likeSidlike(
         context,
         id,
         'like',
         token,
         userName,
+        otherFirebaseId: otherFirebaseId,
+        otherDisplayName: otherDisplayName,
+        otherProfileImage: otherProfileImage,
       );
     } else {
       print("Token not found");
@@ -345,6 +362,10 @@ class _LikesyouState extends State<Likesyou> {
       },
       child: BlocBuilder<LikedYouCubit, LikedYouState>(
         builder: (context, state) {
+          print("🔍 Likes You UI - State: ${state.status}");
+          print("🔍 Likes You UI - shouldShowContent: $shouldShowContent");
+          print("🔍 Likes You UI - Response data: ${state.response?.result?.length ?? 0} users");
+          
           if (state.status == ApiStates.loading) {
             return AppLoader(); // Show loader while fetching
           } else if (state.status == ApiStates.success) {
@@ -393,7 +414,7 @@ class _LikesyouState extends State<Likesyou> {
               crossAxisSpacing: 5.w,
               itemCount: (state.response?.result?.length ?? 0) + (BlocProvider.of<LikedYouCubit>(context).hasMoreData ? 1 : 0),
               itemBuilder: (context, index) {
-                // Show loading indicator at the end if there are more users
+              
                 if (index == (state.response?.result?.length ?? 0)) {
                   return Container(
                     height: 100,
@@ -403,20 +424,31 @@ class _LikesyouState extends State<Likesyou> {
                   );
                 }
                 final result = state.response!.result![index];
-                final imageUrl = result.likedUserId?.profilePicture ?? '';
-                final userName = result.likedUserId?.firstName ?? '';
-                final id = result.id ?? '';
+                final imageUrl = result.userId?.profilePicture ?? '';
+                final firstName = result.userId?.firstName ?? '';
+                final lastName = result.userId?.lastName ?? '';
+                final fullName = (lastName.isEmpty) ? firstName : '$firstName $lastName';
+                final userName = '$firstName, ${result.userId?.age ?? ''}';
+                final id = result.userId?.id ?? '';
+                final firebaseId = result.userId?.firebaseId?.toString();
+                final profileImage = result.userId?.profilePicture;
+                
+                // Debug logging for each user
+                print("🔍 Likes You - User $index:");
+                print("   📝 Full result: ${result.toJson()}");
+                print("   👤 User ID: $id");
+                print("   🖼️ Image URL: $imageUrl");
+                print("   📛 User Name: $userName");
+                print("   📊 User Data: ${result.userId?.toJson()}");
+                print("   🔄 API Structure: user_id contains user data, liked_user_id is string: ${result.likedUserId}");
 
-                return StaggeredGridTile.count(
-                  crossAxisCellCount: 4,
-                  mainAxisCellCount: 2,
-                  child: Transform(
-                    transform: Matrix4.identity()
-                      ..setEntry(3, 2, 0.001)
-                      ..rotateX(-0.01)
-                      ..rotateY(0.01),
-                    alignment: FractionalOffset.center,
-                    child: CachedNetworkImage(
+                return Transform(
+                  transform: Matrix4.identity()
+                    ..setEntry(3, 2, 0.001)
+                    ..rotateX(-0.01)
+                    ..rotateY(0.01),
+                  alignment: FractionalOffset.center,
+                  child: CachedNetworkImage(
                       height: MediaQuery.of(context).size.height * 0.25,
                       width: MediaQuery.of(context).size.width * .02,
                       imageUrl: imageUrl,
@@ -449,7 +481,13 @@ class _LikesyouState extends State<Likesyou> {
                                 alignment: Alignment.topRight,
                                 child: GestureDetector(
                                   onTap: () {
-                                    _likeUser(id, userName);
+                                    _likeUser(
+                                      id,
+                                      userName,
+                                      otherFirebaseId: firebaseId,
+                                      otherDisplayName: fullName,
+                                      otherProfileImage: profileImage,
+                                    );
                                   },
                                   child: Container(
                                     height: 5.5.h,
@@ -519,8 +557,7 @@ class _LikesyouState extends State<Likesyou> {
                       fit: BoxFit.fill,
                       filterQuality: FilterQuality.high,
                     ),
-                  ),
-                );
+                  );
               },
             ).pOnly(left: 3.w, right: 3.w);
           } else if (state.status == ApiStates.error) {

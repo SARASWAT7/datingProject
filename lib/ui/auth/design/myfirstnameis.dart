@@ -55,6 +55,7 @@ class _MyFirstNameState extends State<MyFirstName> {
                         const SizedBox(height: 7),
                         AppText(
                           size: 18,
+                          maxlin: 2,
                           text:
                           'This is how it will appear in Dating  &  you will not able to change it.',
                           color: const Color(0xff555555),

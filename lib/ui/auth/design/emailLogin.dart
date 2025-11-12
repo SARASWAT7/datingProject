@@ -189,6 +189,10 @@ class _MyNumberState extends State<Email> {
 
                                 LoginType? loginType = determineLoginType();
                                 if (loginType != null && loginType == LoginType.peEmail) {
+                                  print('Email: $email');
+                                  print('Lat: $lat');
+                                  print('Long: $long');
+                                  print('Device Token: $_deviceToken');
                                   context.read<LogInCubit>().email(
                                     context,
                                     "",

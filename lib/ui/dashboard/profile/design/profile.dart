@@ -46,9 +46,14 @@ class _ProfileState extends State<Profile> {
   String? _deviceToken;
   @override
   void initState() {
-    context.read<ProfileCubit>().getprofile(context);
-    _getDeviceToken();
     super.initState();
+    // Use addPostFrameCallback to safely access context after widget is mounted
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<ProfileCubit>().getprofile(context);
+      }
+    });
+    _getDeviceToken();
   }
 
   Future<String?> _getDeviceToken() async {
@@ -225,8 +230,7 @@ class _ProfileState extends State<Profile> {
                             deviceToken,
                           );
 
-                          SharedPreferences pref =
-                              await SharedPreferences.getInstance();
+                          SharedPreferences pref = await SharedPreferences.getInstance();
                           await pref.clear();
 
                           Navigator.pushAndRemoveUntil(

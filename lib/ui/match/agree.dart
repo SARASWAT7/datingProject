@@ -31,7 +31,12 @@ class _AgreeScreenState extends State<AgreeScreen> {
   @override
   void initState() {
     super.initState();
-    BlocProvider.of<AgreeCubit>(context).getAgreeDisagreeData(widget.userId);
+    // Use addPostFrameCallback to safely access context after widget is mounted
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        BlocProvider.of<AgreeCubit>(context).getAgreeDisagreeData(widget.userId);
+      }
+    });
   }
 
 
@@ -40,7 +45,7 @@ class _AgreeScreenState extends State<AgreeScreen> {
     return BlocBuilder<AgreeCubit, AgreeState>(
       builder: (context, state) {
         if (state is AgreeLoading) {
-          return Center(child: AppLoader()); // Show loading indicator
+          return Center(child: AppLoader()); 
         } else if (state is AgreeFailure) {
           return Center(child: Text('Error: ${state.message}')); // Show error message
         } else if (state is AgreeSuccess) {

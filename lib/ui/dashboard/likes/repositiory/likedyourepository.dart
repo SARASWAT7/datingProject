@@ -19,6 +19,7 @@ class LikedYouRepository {
   Future<LikedYouResponse> likedyou({int page = 1, int limit = 10}) async {
     SharedPreferences pref = await SharedPreferences.getInstance();
     token = pref.getString("token") ?? "";
+    print("amit1234567890${token}");
     
     log("🏁 Starting likedyou API with pagination");
     log("📄 Page: $page, Limit: $limit");

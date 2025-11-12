@@ -6,6 +6,7 @@ import 'package:demoproject/ui/dashboard/chat/model/datacreationmodel.dart';
 import 'package:demoproject/ui/dashboard/chat/model/inboxmodel.dart';
 import 'package:demoproject/ui/dashboard/chat/model/usermodel.dart';
 import 'package:dio/dio.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -79,7 +80,8 @@ class CorettaChatRepository {
             .doc(otherUserId)
             .collection('myInbox')
             .doc(chatID);
-        transaction.update(result1, updateData);
+        // Use set for non-existent docs to avoid crash
+        transaction.set(result1, updateData);
       } else {
         transaction.update(result, updateData);
       }
@@ -231,10 +233,14 @@ class CorettaChatRepository {
         "${response.data} $deviceToken ++++++++++++++++++++++====================>",
       );
       return sentNotification.fromJson(response.data);
-    } on DioError catch (e) {
-      print("${e.response?.data}  eeeee===============>");
-      throw e.response?.data['message'].toString() ?? "sdsd";
+    } on DioException catch (e) {
+      final message = e.response?.data is Map
+          ? (e.response?.data['message']?.toString() ?? 'Something went wrong')
+          : (e.message ?? 'Network error');
+      Fluttertoast.showToast(msg: message);
+      throw message;
     } catch (e) {
+      Fluttertoast.showToast(msg: e.toString());
       throw e.toString();
     }
   }
@@ -264,8 +270,50 @@ class CorettaChatRepository {
 
       return sentNotification.fromJson(response.data);
     } on DioException catch (e) {
-      print("${e.response?.data}  eeeee===============>");
-      throw e.response?.data['message'].toString() ?? "sdsd";
+      final message = e.response?.data is Map
+          ? (e.response?.data['message']?.toString() ?? 'Something went wrong')
+          : (e.message ?? 'Network error');
+      Fluttertoast.showToast(msg: message);
+      throw message;
+    } catch (e) {
+      Fluttertoast.showToast(msg: e.toString());
+      throw e.toString();
+    }
+  }
+
+  Future<sentNotification> sentNotiGroupMessage(
+    String groupID,
+    String message,
+    String groupName,
+  ) async {
+    log(
+      "================++++++++++++++++>>>>>>>>>>>>>>>>>>>>>> Group Notification - groupID: $groupID message: $message, Group Name: $groupName",
+    );
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    var token = prefs.getString('token');
+
+    dio.options.headers['content-Type'] = 'application/json';
+    dio.options.headers['Authorization'] = 'Bearer $token';
+    dio.interceptors.add(PrettyDioLogger());
+    log(
+      "================++++++++++++++++>>>>>>>>>>>>>>>>>>>>>> Group Notification - groupID: $groupID message: $message groupName: $groupName - Data: {\"group_id\": $groupID, \"messageString\": $message, \"group_name\": $groupName, \"data\": \"\"}",
+    );
+    try {
+      final response = await dio.post(
+        "user/sendNotificationToGroup",
+        data: {
+          "group_id": groupID, 
+          "messageString": message, 
+          "groupName": groupName,
+          "data": ""
+        },
+      );
+
+      return sentNotification.fromJson(response.data);
+    } on DioException catch (e) {
+      print("${e.response?.data}  Group Notification Error ===============>");
+      throw e.response?.data['message'].toString() ?? "Group notification failed";
     } catch (e) {
       throw e.toString();
     }
@@ -288,10 +336,14 @@ class AgoraVideoCall {
     try {
       final response = await dio.get("user/get-channel-token");
       return GetToken.fromJson(response.data);
-    } on DioError catch (e) {
-      log("message ${e.response?.data} +++++++++++++==============+++++>");
-      throw e.response?.data['message'];
+    } on DioException catch (e) {
+      final message = e.response?.data is Map
+          ? (e.response?.data['message']?.toString() ?? 'Something went wrong')
+          : (e.message ?? 'Network error');
+      Fluttertoast.showToast(msg: message);
+      throw message;
     } catch (e) {
+      Fluttertoast.showToast(msg: e.toString());
       throw e.toString();
     }
   }

@@ -21,6 +21,25 @@ class MyMedia extends StatefulWidget {
 }
 
 class _MyMediaState extends State<MyMedia> {
+  /// Evict deleted images from all caches (memory + disk)
+  Future<void> _evictDeletedImages(List<String> urls) async {
+    try {
+      final cacheManager = CustomCacheManager();
+      for (final url in urls) {
+        if (url.isEmpty) continue;
+        try {
+          await cacheManager.removeFile(url);
+        } catch (_) {}
+        try {
+          // Evict from global image cache
+          PaintingBinding.instance.imageCache.evict(NetworkImage(url));
+        } catch (_) {}
+        try {
+          await CachedNetworkImage.evictFromCache(url);
+        } catch (_) {}
+      }
+    } catch (_) {}
+  }
   @override
   void initState() {
     super.initState();
@@ -75,10 +94,23 @@ class _MyMediaState extends State<MyMedia> {
                         context: context,
                         builder: (context) {
                           return AlertBox3(
-                            title: 'Are you sure you want to delete these images?',
-                            onYesPressed: () {
+                            title: 'Delete selected photos?',
+                            onYesPressed: () async {
                               Navigator.of(context).pop();
-                              context.read<ProfileCubit>().deleteMedia(context);
+                              final urls = List<String>.from(
+                                context.read<ProfileCubit>().state.selectedPhoto ?? <String>[],
+                              );
+                              // Trigger server delete
+                              try {
+                                await Future.sync(() => context.read<ProfileCubit>().deleteMedia(context));
+                              } catch (_) {}
+                              // Evict from caches immediately so UI refreshes like a gallery
+                              await _evictDeletedImages(urls);
+                              // Refresh profile & exit selection mode
+                              if (mounted) {
+                                context.read<ProfileCubit>().getprofile(context);
+                                context.read<ProfileCubit>().deleteupdate(false);
+                              }
                             },
                             onNoPressed: () {
                               Navigator.of(context).pop();
@@ -125,9 +157,11 @@ class _MyMediaState extends State<MyMedia> {
               ),
             );
           } else {
-            final mediaList = state.profileResponse?.result?.media ?? [];
+            // Deduplicate & stabilize order to avoid duplicate tiles after cache updates
+            final raw = state.profileResponse?.result?.media ?? [];
+            final mediaList = raw.toSet().toList();
 
-            return MasonryGridView.builder(
+            final grid = MasonryGridView.builder(
               padding: EdgeInsets.symmetric(horizontal: 8.0),
               gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
@@ -148,12 +182,13 @@ class _MyMediaState extends State<MyMedia> {
                     children: [
                       Padding(
                         padding: const EdgeInsets.all(12.0),
-                        child:
-                        CachedNetworkImage(
+                        child: CachedNetworkImage(
+                          key: ValueKey(image),
                           height: MediaQuery.of(context).size.height * 0.25,
                           width: MediaQuery.of(context).size.width,
                           imageUrl: image,
-                          cacheKey: "media_$index",
+                          // Use URL as cacheKey so rebuilt lists don't map to previous indices
+                          cacheKey: image,
                           cacheManager: CustomCacheManager(),
                           imageBuilder: (context, imageProvider) => Container(
                             height: 30.h,
@@ -200,6 +235,15 @@ class _MyMediaState extends State<MyMedia> {
                   ),
                 );
               },
+            );
+
+            // Pull-to-refresh to force a clean rebuild
+            return RefreshIndicator(
+              onRefresh: () async {
+                context.read<ProfileCubit>().getprofile(context);
+                setState(() {});
+              },
+              child: grid,
             );
           }
         },

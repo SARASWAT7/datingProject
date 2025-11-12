@@ -84,7 +84,7 @@ class _PassionScreenState extends State<PassionScreen> {
                               options: GroupButtonOptions(
                                 selectedShadow: const [],
                                 selectedTextStyle: TextStyle(
-                                  fontSize: 18.sp,
+                                  fontSize: 16.sp,
                                   color: AppColor.iconsColor,
                                 ),
                                 selectedColor: Colors.transparent,
@@ -132,7 +132,10 @@ class _PassionScreenState extends State<PassionScreen> {
                               padding: EdgeInsets.only(left: 4.w, right: 4.w),
                               child: CustomButton(text: 'Continue'),
                             ),
+
                           ),
+                                                    10.h.heightBox,
+
                         ],
                       ),
                     ),

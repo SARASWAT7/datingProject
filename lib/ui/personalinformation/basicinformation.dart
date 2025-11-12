@@ -30,7 +30,7 @@ import '../../main.dart';
 import 'iam.dart';
 import 'moreaboutme.dart';
 
-const String kGoogleApiKey = "AIzaSyBF4lh33f-kYpzZY4P0UWTXgSKyzqpnBZg";
+const String kGoogleApiKey = "AIzaSyAhwCWDZWZupEU3IwmT7rbQFZzL2L047sA";
 
 class BasicInfoPage extends StatefulWidget {
   final String gendername;
@@ -476,19 +476,19 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Padding(
-                            padding: EdgeInsets.only(top: 7),
+                            padding: EdgeInsets.only(top: 5),
                             child: DropdownButton(
                               underline: const SizedBox(),
                               hint: _dropDownValue3 == null
                                   ? CustomText(
-                                      size: 14.sp,
+                                      size: 15.sp,
                                       text: 'Select degree',
                                       color: Colors.black,
                                       weight: FontWeight.w600,
                                       fontFamily: 'Nunito Sans',
                                     )
                                   : CustomText(
-                                      size: 12.sp,
+                                      size: 15.sp,
                                       text: _dropDownValue3,
                                       color: Colors.black,
                                       weight: FontWeight.w600,
@@ -552,7 +552,7 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                         Padding(
                           padding: const EdgeInsets.only(left: 17, right: 17),
                           child: Container(
-                            height: 7.h,
+                            height:7.h,
                             width: 90.w,
                             decoration: BoxDecoration(
                               color: const Color(
@@ -566,20 +566,20 @@ class _BasicInfoPageState extends State<BasicInfoPage> {
                             child: Padding(
                               padding: EdgeInsets.only(
                                 left: 7,
-                                top: 7,
+                                top: 5,
                               ), // Add padding to the left and right
                               child: DropdownButton(
                                 underline: const SizedBox(),
                                 hint: _dropDownValue4 == null
                                     ? CustomText(
-                                        size: 14.sp,
+                                        size: 15.sp,
                                         text: 'Select profession',
                                         color: Colors.black,
                                         weight: FontWeight.w600,
                                         fontFamily: 'Nunito Sans',
                                       )
                                     : CustomText(
-                                        size: 12.sp,
+                                        size: 15.sp,
                                         text: _dropDownValue4,
                                         color: Colors.black,
                                         weight: FontWeight.w600,

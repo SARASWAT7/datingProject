@@ -141,9 +141,9 @@ class _ChatScreenState extends State<ChatScreen> {
             .get()
             .then((value) {
               setState(() {
-                devicetokenofothermer = value['deviceToken'];
-                otherusername = value['userName'];
-                otheruserId = value['user_id'];
+                devicetokenofothermer = value['deviceToken'] ?? "";
+                otherusername = "${value['firstName'] ?? ''} ${value['lastName'] ?? ''}".trim();
+                otheruserId = value['id'] ?? "";
                 log(value['deviceToken'] + "     samne vale ka device token");
               });
             })
@@ -278,11 +278,15 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   sendMessageFunction() async {
+    print("1234567890--->");
+    print(msgController.text.trim());
     bool sendnoti = false;
     /* bool sendnoti = */
     await updateStatus()
         .then((value) {
           sendnoti = value;
+          print("12345678900000--->");
+          print(value);
           log("messag e =========++++++++++++++> $value");
         })
         .onError((error, stackTrace) {
@@ -294,10 +298,18 @@ class _ChatScreenState extends State<ChatScreen> {
         .get()
         .then((value) {
           setState(() {
-            devicetokenofothermer = value['deviceToken'];
-            otherusername = value['userName'];
-            otheruserId = value['user_id'];
+            devicetokenofothermer = value['deviceToken'] ?? "";
+            otherusername = "${value['firstName'] ?? ''} ${value['lastName'] ?? ''}".trim();
+            otheruserId = value['id'] ?? "";
             log(value['deviceToken'] + "     samne vale ka device token");
+          });
+        })
+        .catchError((error) {
+          log('Error fetching user data in sendMessageFunction: $error');
+          setState(() {
+            devicetokenofothermer = "";
+            otherusername = "Unknown User";
+            otheruserId = "";
           });
         });
     if (msgController.text.trim().isNotEmpty) {
@@ -326,7 +338,7 @@ class _ChatScreenState extends State<ChatScreen> {
           setroom,
           DateTime.now().millisecondsSinceEpoch,
         );
-        if (sendnoti == false) {
+        // if (sendnoti == false) {
           log("++++++++++++++++++++++++++===================+++> message ");
           fbCloudStore.sentNotiMessage(
             widget.otherUserId,
@@ -341,7 +353,7 @@ class _ChatScreenState extends State<ChatScreen> {
           //       ? "${widget.name} has send an image"
           //       : msgController.text.toString(),
           // );
-        }
+        // }
 
         msgController.clear();
         imageUrl = "";
@@ -613,8 +625,11 @@ class _ChatScreenState extends State<ChatScreen> {
                           IconButton(
                             icon: const Icon(Icons.send, color: Colors.black),
                             onPressed: () {
+                              print("1234567890--->");
+                              print(msgController.text.trim());
                               if (msgController.text.trim().isNotEmpty) {
                                 sendMessageFunction();
+
                               }
                             },
                           ),
@@ -632,6 +647,10 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget messagesListview() {
+    // Guard against invalid room id to avoid runtime crashes
+    if (setroom == null || (setroom is String && (setroom as String).isEmpty)) {
+      return const SizedBox();
+    }
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection("chatroom")
@@ -640,7 +659,10 @@ class _ChatScreenState extends State<ChatScreen> {
           .orderBy('timestamp')
           .snapshots(),
       builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-        readreciptupdate(setroom);
+        // Defensive: ensure read receipt update only when setroom is valid
+        if (setroom != null && (setroom is! String || (setroom as String).isNotEmpty)) {
+          readreciptupdate(setroom);
+        }
         if (snapshot.hasData) {
           return ListView(
             shrinkWrap: true,

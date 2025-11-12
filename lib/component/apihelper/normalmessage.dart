@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 
 import '../alert_box.dart';
+import '../error_boundary.dart';
 
 class DynamicSize {
   static double height(BuildContext context) {
@@ -78,16 +79,27 @@ class NormalMessage {
     r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,16}$',
   );
   bool checkemail(String email) {
-    if (validateEmail.hasMatch(email) == true) {
-      List data = email.split("@");
-      List data1 = data[1].toString().split(".");
+    try {
+      if (validateEmail.hasMatch(email) == true) {
+        List data = SafeStringOps.safeSplit(email, "@");
+        
+        // SAFE CHECK: Ensure we have at least 2 parts after splitting by "@"
+        if (data.length < 2) {
+          return false;
+        }
+        
+        List data1 = SafeStringOps.safeSplit(data[1], ".");
 
-      if (data1.length > 2) {
-        return false;
+        if (data1.length > 2) {
+          return false;
+        } else {
+          return true;
+        }
       } else {
-        return true;
+        return false;
       }
-    } else {
+    } catch (e) {
+      // If any error occurs during email validation, return false
       return false;
     }
   }

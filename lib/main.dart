@@ -42,10 +42,12 @@ import 'package:demoproject/component/apihelper/crash_handler.dart';
 import 'package:demoproject/component/apihelper/startup_optimizer.dart';
 import 'package:demoproject/component/apihelper/firebase_error_handler.dart';
 import 'package:demoproject/service/update_manager.dart';
+import 'package:demoproject/component/apihelper/smart_cache_manager.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-const kGoogleApiKey = "AIzaSyCnRAGJaYpc4edJi8DcHaimmJ9mW4k4EVM";
+// const kGoogleApiKey = "AIzaSyCnRAGJaYpc4edJi8DcHaimmJ9mW4k4EVM";
+const kGoogleApiKey = "AIzaSyAhwCWDZWZupEU3IwmT7rbQFZzL2L047sA";
 
 // Test button function for debugging
 void _showTestButton() {
@@ -60,13 +62,21 @@ void _showTestButton() {
           children: [
             Text('Test the update system:'),
             SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                UpdateManager.checkForUpdates(context);
-              },
-              child: Text('Test Update Check'),
-            ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        UpdateManager.checkForUpdates(context);
+                      },
+                      child: Text('Test Custom Update'),
+                    ),
+                    SizedBox(height: 10),
+        // ElevatedButton(
+        //   onPressed: () {
+        //     Navigator.pop(context);
+        //     UpdateManager.showNativeUpdateScreen(context);
+        //   },
+        //   child: Text('Test Native Update'),
+        // ),
             SizedBox(height: 10),
             ElevatedButton(
               onPressed: () {
@@ -151,7 +161,10 @@ void main() async {
             // Check for app updates after a delay
             Future.delayed(Duration(seconds: 3), () {
               try {
-                UpdateManager.checkForUpdates(navigatorKey.currentState!.context);
+                final context = navigatorKey.currentState?.context;
+                if (context != null) {
+                  UpdateManager.checkForUpdates(context);
+                }
               } catch (e) {
                 if (kDebugMode) {
                   print('Update check error: $e');
@@ -159,16 +172,36 @@ void main() async {
               }
             });
 
-            // Add test button for debugging (only in debug mode)
-            if (kDebugMode) {
-              Future.delayed(Duration(seconds: 5), () {
-                try {
-                  _showTestButton();
-                } catch (e) {
-                  print('Test button error: $e');
-                }
-              });
+        // Add test button for debugging (only in debug mode)
+        if (kDebugMode) {
+          Future.delayed(Duration(seconds: 5), () {
+            try {
+              _showTestButton();
+            } catch (e) {
+              print('Test button error: $e');
             }
+          });
+        }
+
+        // 🔄 NATIVE UPDATE: Check for native Android updates
+        // Native update check temporarily disabled due to package compatibility
+        // Future.delayed(Duration(seconds: 4), () {
+        //   try {
+        //     UpdateManager.checkForNativeUpdates(navigatorKey.currentState!.context);
+        //   } catch (e) {
+        //     print('Native update check error: $e');
+        //   }
+        // });
+
+        // 🧹 CACHE MANAGEMENT: Clear old cache on app startup
+        Future.delayed(Duration(seconds: 2), () {
+          try {
+            SmartCacheManager.clearOldCache();
+            print('🧹 Cleared old cache on app startup');
+          } catch (e) {
+            print('❌ Error clearing cache on startup: $e');
+          }
+        });
 
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
@@ -293,7 +326,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       Future.delayed(Duration(seconds: 1), () {
         try {
-          UpdateManager.checkForUpdates(navigatorKey.currentState!.context);
+          final context = navigatorKey.currentState?.context;
+          if (context != null) {
+            UpdateManager.checkForUpdates(context);
+          }
         } catch (e) {
           if (kDebugMode) {
             print('Update check on resume error: $e');
@@ -346,12 +382,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             BlocProvider(create: (context) => SubscriptionCubit(userData)),
           ],
           child: MaterialApp(
-            builder: (context, child) {
-              return MediaQuery(
-                child: child!,
-                data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1)),
-              );
-            },
+            // Avoid recreating MediaQuery to prevent LateInitializationError
+            // on newer Flutter versions (e.g., _splitScreenMode not initialized)
+            builder: (context, child) => child ?? const SizedBox.shrink(),
             title: "Coretta",
             theme: ThemeData(primarySwatch: Colors.blue),
             home: const SplashScreen(),

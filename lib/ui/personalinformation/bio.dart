@@ -48,18 +48,18 @@ class _BioScreenState extends State<BioScreen> {
                     Padding(
                       padding: const EdgeInsets.only(left: 17, right: 17),
                       child: CustomText(
-                        size: 12.sp,
+                        size: 15.sp,
                         text: 'Write something about you to display on your profile.',
                         color: subhead, weight: FontWeight.w600,
                         fontFamily: 'Nunito Sans',
                       ),
                     ),
-                    2.h.heightBox,
+                    3.h.heightBox,
                     Padding(
                       padding: const EdgeInsets.only(left: 17, right: 20),
                       child: CustomText(
                         weight: FontWeight.w600,
-                        size: 12.sp,
+                        size: 15.sp,
                         text: "${lettercount}/ 500 Words",
                         color: bgClr,
                         fontFamily: 'Nunito Sans',

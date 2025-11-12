@@ -67,7 +67,7 @@
 
 
     <application
-        android:label="datingcoretta"
+        android:label="L'Empire Dating"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true">
