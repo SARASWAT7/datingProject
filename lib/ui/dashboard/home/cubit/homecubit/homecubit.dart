@@ -243,8 +243,13 @@ class HomePageCubit extends Cubit<HomePageState> {
           // Fallback to direct repository call
           try {
             final homeRepo = HomeRepository();
+            // Always use page 1 for initial load
+            final pageToLoad = 1;
+            log(
+              "📡 Initial load - Using page: $pageToLoad (state.currentPage: ${state.currentPage})",
+            );
             response = await homeRepo.homePageApi(
-              page: state.currentPage,
+              page: pageToLoad,
               limit: pageLimit,
             );
           } catch (repoError) {
@@ -256,8 +261,11 @@ class HomePageCubit extends Cubit<HomePageState> {
 
               try {
                 final homeRepo = HomeRepository();
+                // Always use page 1 for initial load
+                final pageToLoad = 1;
+                log("📡 Retry initial load - Using page: $pageToLoad");
                 response = await homeRepo.homePageApi(
-                  page: state.currentPage,
+                  page: pageToLoad,
                   limit: pageLimit,
                 );
               } catch (finalError) {
@@ -423,8 +431,13 @@ class HomePageCubit extends Cubit<HomePageState> {
     try {
       log("🔄 Refreshing data in background...");
       final homeRepo = HomeRepository();
+      // Always use page 1 for background refresh
+      final pageToLoad = 1;
+      log(
+        "🔄 Background refresh - Using page: $pageToLoad (state.currentPage: ${state.currentPage})",
+      );
       final response = await homeRepo.homePageApi(
-        page: state.currentPage,
+        page: pageToLoad,
         limit: pageLimit,
       );
 
@@ -484,8 +497,23 @@ class HomePageCubit extends Cubit<HomePageState> {
       emit(state.copyWith(isLoadingMore: true));
       final nextPage = state.currentPage + 1;
 
-      log("📡 Loading more users - page $nextPage");
+      log(
+        "📡 Loading more users - Current page: ${state.currentPage}, Next page: $nextPage, Limit: $pageLimit",
+      );
+      log("📡 Making API call with page=$nextPage and limit=$pageLimit");
       final response = await repo.homePageApi(page: nextPage, limit: pageLimit);
+
+      log(
+        "📡 API Response received - Users count: ${response.result?.users?.length ?? 0}",
+      );
+      if (response.result?.users?.isNotEmpty == true) {
+        log(
+          "📡 First user ID from page $nextPage: ${response.result?.users?.first.id}",
+        );
+        log(
+          "📡 Last user ID from page $nextPage: ${response.result?.users?.last.id}",
+        );
+      }
 
       // 🧹 CACHE MANAGEMENT: Clear old user images when loading new users
       await manageCacheForNewUsers(response);
@@ -497,8 +525,30 @@ class HomePageCubit extends Cubit<HomePageState> {
         "📊 New users received: ${newUsers.length}, Current users: ${currentUsers.length}",
       );
 
-      // Combine existing users with new users
-      final combinedUsers = [...currentUsers, ...newUsers];
+      // Filter out duplicate users based on user ID to prevent showing same profile
+      final currentUserIds = currentUsers
+          .map((u) => u.id)
+          .whereType<String>()
+          .toSet();
+      final uniqueNewUsers = newUsers.where((user) {
+        final userId = user.id;
+        if (userId == null)
+          return true; // Include users without ID (shouldn't happen)
+        return !currentUserIds.contains(userId);
+      }).toList();
+
+      log(
+        "📊 After filtering duplicates - Unique new users: ${uniqueNewUsers.length}, Duplicates removed: ${newUsers.length - uniqueNewUsers.length}",
+      );
+
+      if (uniqueNewUsers.isEmpty) {
+        log(
+          "⚠️ No new unique users found on page $nextPage - might be duplicate data from server",
+        );
+      }
+
+      // Combine existing users with unique new users only
+      final combinedUsers = [...currentUsers, ...uniqueNewUsers];
 
       // Always assume there might be more data to allow continuous checking
       final hasMoreData = true;
@@ -857,8 +907,8 @@ class HomePageCubit extends Cubit<HomePageState> {
           if ((u.id?.toString() ?? '') == otherUserId) {
             otherDisplayName = (u.firstName ?? otherUserName).toString();
             final media = u.media;
-            if (media != null && media is List && (media as List).isNotEmpty) {
-              otherImage = (media as List).first.toString();
+            if (media != null && media.isNotEmpty) {
+              otherImage = media.first.toString();
             }
             break;
           }

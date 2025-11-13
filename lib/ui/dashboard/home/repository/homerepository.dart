@@ -34,6 +34,10 @@ class HomeRepository {
         "Making home page API call with token: ${token.isNotEmpty ? 'Present' : 'Missing'}",
       );
       log("📄 Home API - Page: $page, Limit: $limit");
+      log("📄 Home API - Query Parameters: page=$page, limit=$limit");
+      log(
+        "📄 Home API - Full URL will be: ${UrlEndpoints.baseUrl}${HomeUriPath.homeApi}?page=$page&limit=$limit",
+      );
 
       // Use the enhanced API service with retry logic
       final response = await ApiService(token: token).requestWithRetry(
@@ -46,6 +50,23 @@ class HomeRepository {
           },
         ),
       );
+
+      log("📄 Home API - Response received for page $page");
+      log("📄 Home API - Response status: ${response.statusCode}");
+      if (response.data != null && response.data is Map) {
+        final data = response.data as Map;
+        if (data.containsKey('result') && data['result'] is Map) {
+          final result = data['result'] as Map;
+          if (result.containsKey('users') && result['users'] is List) {
+            final users = result['users'] as List;
+            log("📄 Home API - Users in response: ${users.length}");
+            if (users.isNotEmpty) {
+              log("📄 Home API - First user ID: ${users.first['id'] ?? 'N/A'}");
+              log("📄 Home API - Last user ID: ${users.last['id'] ?? 'N/A'}");
+            }
+          }
+        }
+      }
 
       if (response.data == null) {
         throw Exception("No data received from server");
@@ -246,7 +267,7 @@ class HomeRepository {
     dio.options.headers['Authorization'] = 'Bearer $token';
     final device_token = await getDeviceToken();
     try {
-      final response = await dio.patch(
+      await dio.patch(
         UrlEndpoints.deviceTokenUpdate,
         data: {"device_token": device_token},
       );

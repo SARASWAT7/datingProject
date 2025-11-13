@@ -32,16 +32,16 @@ class ApiService {
 
     // Add logging interceptor only in debug mode
     if (kDebugMode) {
-      _dio.interceptors.add(
-        PrettyDioLogger(
-          requestHeader: true,
-          requestBody: true,
-          responseBody: true,
-          responseHeader: false,
-          error: true,
-          compact: true,
-        ),
-      );
+      // _dio.interceptors.add(
+      //   PrettyDioLogger(
+      //     requestHeader: true,
+      //     requestBody: true,
+      //     responseBody: true,
+      //     responseHeader: false,
+      //     error: true,
+      //     compact: true,
+      //   ),
+      // );
     }
   }
 
